@@ -9,8 +9,7 @@ describe("space_castle", () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>;
 
   it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
+    const tx = await program.methods.initializeGame().rpc();
     console.log("Your transaction signature", tx);
   });
 });
