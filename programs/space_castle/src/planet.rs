@@ -59,6 +59,6 @@ pub fn are_planet_coordinates_valid(x: u16, y: u16) -> bool {
 }
 
 #[error_code]
-pub enum GameErrorCode {
+pub enum PlanetErrorCode {
     PlanetAlreadyClaimed
 }
