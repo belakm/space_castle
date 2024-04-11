@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Ship {
-    engine: EngineModule,
     armor: u8,
     shields: u8,
     engine_module: EngineModule,
@@ -11,6 +10,20 @@ pub struct Ship {
     weapon_modules: Vec<WeaponModule>,
     #[max_len(3)]
     utility_modules: Vec<UtilityModule>,
+}
+
+impl Ship {
+    pub fn convert_to_starting_ship(&mut self) {
+        self.armor = 32;
+        self.shields = 8;
+        self.engine_module = EngineModule::Normal;
+        self.weapon_modules = vec![WeaponModule {
+            weapon_type: WeaponType::Kinetic,
+        }];
+        self.utility_modules = vec![UtilityModule {
+            utility_type: UtilityType::MiningDrill,
+        }];
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace)]
@@ -40,4 +53,9 @@ pub enum WeaponType {
 pub enum UtilityType {
     ShieldGenerator,
     EngineBooster,
+    ExtraArmor,
+    CommandCenter,
+    SeedingBay,
+    ScienceLab,
+    MiningDrill,
 }

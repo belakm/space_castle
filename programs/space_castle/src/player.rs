@@ -1,16 +1,17 @@
 use anchor_lang::prelude::*;
-use crate::{seeds, Ship};
+use crate::seeds;
 
 #[account]
 #[derive(InitSpace)]
 pub struct Player {
-    #[max_len(24)]
+    #[max_len(32)]
     pub name: String,
-    pub num_fleets: u16
+    pub settled_planets: u8
 }
 
 #[derive(Accounts)]
-pub struct CreatePlayer<'info> {
+#[instruction(name: String)]
+pub struct RegisterPlayer<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
@@ -21,13 +22,10 @@ pub struct CreatePlayer<'info> {
         space = 8 + Player::INIT_SPACE 
     )]
     pub player: Account<'info, Player>,
-    #[account(
-        init,
-        payer = signer,
-        seeds = [seeds::SHIP, signer.key().as_ref(), b"1"], 
-        bump,
-        space = 8 + Player::INIT_SPACE 
-    )]
-    pub initial_ship: Account<'info, Ship>,
     pub system_program: Program<'info, System>,
+}
+
+#[error_code]
+pub enum PlayerErrorCode {
+    NameTooLong
 }
