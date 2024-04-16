@@ -23,7 +23,7 @@ describe('Space Castle: PLAYER', () => {
       program.programId
     )
     await program.methods
-      .registerPlayer('mico')
+      .playerRegister('mico')
       .accounts({
         signer: playerWallet.publicKey,
         player: playerAccount
@@ -39,7 +39,7 @@ describe('Space Castle: PLAYER', () => {
         program.programId
       )
       await program.methods
-        .registerPlayer('123456789012345678901234567890123')
+        .playerRegister('123456789012345678901234567890123')
         .accounts({
           signer: secondPlayerWallet.publicKey,
           player: playerAccount

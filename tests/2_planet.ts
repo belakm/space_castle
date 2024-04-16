@@ -39,7 +39,7 @@ describe('Space Castle: PLANET', () => {
     )
 
     await program.methods
-      .registerPlayer('mico')
+      .playerRegister('mico')
       .accounts({
         signer: playerWallet.publicKey,
         player: playerAccount
@@ -48,7 +48,7 @@ describe('Space Castle: PLANET', () => {
       .rpc()
 
     await program.methods
-      .registerPlayer('mico 2')
+      .playerRegister('mico 2')
       .accounts({
         signer: secondPlayerWallet.publicKey,
         player: secondPlayerAccount
@@ -93,7 +93,7 @@ describe('Space Castle: PLANET', () => {
     )
 
     await program.methods
-      .settleFirstPlanet(1, 3)
+      .planetFirstClaim(1, 3)
       .accounts({
         signer: playerWallet.publicKey,
         planetInfo,
@@ -138,7 +138,7 @@ describe('Space Castle: PLANET', () => {
       )
 
       await program.methods
-        .settleFirstPlanet(1, 3)
+        .planetFirstClaim(1, 3)
         .accounts({
           signer: secondPlayerWallet.publicKey,
           planetInfo,
@@ -190,7 +190,7 @@ describe('Space Castle: PLANET', () => {
       )
 
       await program.methods
-        .settleFirstPlanet(1, 3)
+        .planetFirstClaim(1, 3)
         .accounts({
           signer: secondPlayerWallet.publicKey,
           planetInfo,
@@ -242,7 +242,7 @@ describe('Space Castle: PLANET', () => {
       )
 
       await program.methods
-        .settleFirstPlanet(1, 3)
+        .planetFirstClaim(1, 3)
         .accounts({
           signer: playerWallet.publicKey,
           planetInfo,
@@ -254,7 +254,7 @@ describe('Space Castle: PLANET', () => {
         .rpc()
       assert.fail('Could settle second planet as first planet.')
     } catch {
-      assert.ok('Couln\'t settle second planet as first planet.')
+      assert.ok('Couldn\'t settle second planet as first planet.')
     }
   })
 
