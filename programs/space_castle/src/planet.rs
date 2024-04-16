@@ -27,7 +27,10 @@ pub fn are_planet_coordinates_valid(x: u16, y: u16) -> bool {
 
 #[error_code]
 pub enum PlanetErrorCode {
+    #[msg("Planet is already settled and cannot be claimed.")]
     PlanetAlreadySettled,
+    #[msg("Player already claimed their first planet.")]
     MaxOneFirstPlanet,
+    #[msg("Invalid planet coordinates")]
     NoPlanetAtCoordinates,
 }
