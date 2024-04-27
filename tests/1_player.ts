@@ -1,11 +1,11 @@
 import * as anchor from '@coral-xyz/anchor'
 import { type Program } from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
-import { Keypair, PublicKey } from '@solana/web3.js'
+import { Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
-import { createAndFundWallet } from './utils'
+import { createAndFundWallet } from './utils/wallet'
 
-describe('Space Castle: PLAYER', () => {
+describe('[Unit]: Player', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   const provider = anchor.AnchorProvider.env()
   let playerWallet: Keypair
@@ -18,31 +18,21 @@ describe('Space Castle: PLAYER', () => {
   })
 
   it('New player can be created', async () => {
-    const [playerAccount] = PublicKey.findProgramAddressSync(
-      [Buffer.from('player'), playerWallet.publicKey.toBuffer()],
-      program.programId
-    )
     await program.methods
       .playerRegister('mico')
       .accounts({
         signer: playerWallet.publicKey,
-        player: playerAccount
       })
       .signers([playerWallet])
       .rpc()
   })
 
-  it('Player can\'t have a name too long', async () => {
+  it("Player can't have a name too long", async () => {
     try {
-      const [playerAccount] = PublicKey.findProgramAddressSync(
-        [Buffer.from('player'), secondPlayerWallet.publicKey.toBuffer()],
-        program.programId
-      )
       await program.methods
         .playerRegister('123456789012345678901234567890123')
         .accounts({
           signer: secondPlayerWallet.publicKey,
-          player: playerAccount
         })
         .signers([playerWallet])
         .rpc()
@@ -51,5 +41,4 @@ describe('Space Castle: PLAYER', () => {
       assert.ok('32 max length is working ok:)')
     }
   })
-
 })
