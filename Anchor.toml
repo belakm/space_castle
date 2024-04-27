@@ -19,7 +19,7 @@ test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test.validator]
 url = "http://127.0.0.1:8899"
-ledger = "./test-ledger"
+ledger = "./.anchor/test-ledger/"
 rpc_port = 8899
 
 #[[test.validator.clone]]
