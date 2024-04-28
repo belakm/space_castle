@@ -5,7 +5,7 @@ import { Keypair, PublicKey } from '@solana/web3.js'
 import { assert } from 'chai'
 import { createAndFundWallet } from './utils/wallet'
 
-describe('[Unit] Planet', () => {
+describe('[Unit]: Planet', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>

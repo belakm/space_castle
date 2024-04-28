@@ -56,8 +56,7 @@ pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
         )
         .with_signer(signer_seeds),
         amount * 10u64.pow(ctx.accounts.mint.decimals as u32),
-    )?;
-    Ok(())
+    )
 }
 
 #[derive(Accounts)]

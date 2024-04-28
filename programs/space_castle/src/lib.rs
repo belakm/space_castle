@@ -30,6 +30,17 @@ pub mod seeds {
     pub const ACCOUNT_CRYSTAL: &[u8] = b"account_crystal";
     pub const ACCOUNT_CHEMICAL: &[u8] = b"account_chemical";
     pub const ACCOUNT_FUEL: &[u8] = b"account_fuel";
+
+    pub fn mintkey_to_seed(key: &str) -> Option<&[u8]> {
+        match key {
+            "igt" => Some(MINT_IGT),
+            "metal" => Some(MINT_METAL),
+            "crystal" => Some(MINT_CRYSTAL),
+            "chemical" => Some(MINT_CHEMICAL),
+            "fuel" => Some(MINT_FUEL),
+            _ => None,
+        }
+    }
 }
 
 #[program]
@@ -59,35 +70,50 @@ mod space_castle {
     pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
         instructions::mint_init_igt(ctx)
     }
-    /// Mint to X Account
+    /// Mint IGT to X Account
     pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
         instructions::mint_igt(ctx, amount)
     }
-    /// Create IGT Mint
+    /// Create Metal Mint
     pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
         instructions::mint_init_metal(ctx)
     }
-    /// Mint to X Account
+    /// Mint Metal to X Account
     pub fn mint_metal(ctx: Context<MintMetal>, amount: u64) -> Result<()> {
         instructions::mint_metal(ctx, amount)
     }
+    /// Create Chemical Mint
+    pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
+        instructions::mint_init_chemical(ctx)
+    }
+    /// Mint Chemicals to X Account
+    pub fn mint_chemicals(ctx: Context<MintChemicals>, amount: u64) -> Result<()> {
+        instructions::mint_chemicals(ctx, amount)
+    }
 
-    /// Metal
     /// Chemicals
     /// Crystals
     ///
     /// Market pool
     ///
     /// Market pool - Create the market liquidity pool
-    pub fn create_pool(ctx: Context<MarketPoolCreate>) -> Result<()> {
+    pub fn market_pool_create(ctx: Context<MarketPoolCreate>) -> Result<()> {
         instructions::market_pool_create(ctx)
     }
     /// Market pool - Provide liquidity to the pool by funding it with some asset
-    pub fn fund_pool(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()> {
+    pub fn market_pool_mint_to(
+        ctx: Context<MarketPoolMintTo>,
+        amount: u64,
+        resource: String,
+    ) -> Result<()> {
+        instructions::market_pool_mint_to(ctx, amount, resource)
+    }
+    /// Market pool - Provide liquidity to the pool by funding it with some asset
+    pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()> {
         instructions::market_pool_fund(ctx, amount)
     }
     /// Market pool - swap assets in the Market pool
-    pub fn swap(ctx: Context<MarketPoolSwap>, amount_to_swap: u64) -> Result<()> {
+    pub fn market_pool_swap(ctx: Context<MarketPoolSwap>, amount_to_swap: u64) -> Result<()> {
         instructions::market_pool_swap(ctx, amount_to_swap)
     }
 }

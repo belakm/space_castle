@@ -1,5 +1,5 @@
 use anchor_lang::{prelude::*, system_program};
-use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, transfer, Mint, MintTo, Token, TokenAccount, Transfer};
 use std::ops::{Add, Div, Mul};
 
 use crate::error::MarketPoolError;
@@ -49,6 +49,15 @@ pub trait MarketPoolAccount<'info> {
             u64,
         ),
         authority: &Signer<'info>,
+        token_program: &Program<'info, Token>,
+    ) -> Result<()>;
+    fn mint_to_pool(
+        &mut self,
+        mint: &Account<'info, Mint>,
+        mint_seed_and_bump: (&[u8], u8),
+        market_pool_token_account: &Account<'info, TokenAccount>,
+        amount: u64,
+        payer: &Signer<'info>,
         system_program: &Program<'info, System>,
         token_program: &Program<'info, Token>,
     ) -> Result<()>;
@@ -137,13 +146,38 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
         Ok(())
     }
 
-    /// Funds the Market Pool by transferring assets from the payer's - or
-    /// Liquidity Provider's - token account to the Market Pool's token
-    /// account
+    /// Mints to the Market Pool
     ///
     /// In this function, the program is also going to add the mint address to
     /// the list of mint addresses stored in the `MarketPool` data, if it
     /// does not exist, and reallocate the account's size
+    fn mint_to_pool(
+        &mut self,
+        mint: &Account<'info, Mint>,
+        (seed, bump): (&[u8], u8),
+        market_pool_token_account: &Account<'info, TokenAccount>,
+        amount: u64,
+        payer: &Signer<'info>,
+        system_program: &Program<'info, System>,
+        token_program: &Program<'info, Token>,
+    ) -> Result<()> {
+        self.add_asset(mint.key(), payer, system_program)?;
+        let signer_seeds: &[&[&[u8]]] = &[&[seed, &[bump]]];
+        process_new_minting(
+            mint,
+            market_pool_token_account,
+            amount,
+            token_program,
+            signer_seeds,
+        )?;
+        Ok(())
+    }
+
+    /// Funds the Market Pool by transferring assets from the payer's - or
+    /// Liquidity Provider's - token account to the Market Pool's token
+    /// account
+    ///
+    /// If the pubkey of mint isnt supported, we reject the funding
     fn fund(
         &mut self,
         deposit: (
@@ -153,13 +187,16 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
             u64,
         ),
         authority: &Signer<'info>,
-        system_program: &Program<'info, System>,
         token_program: &Program<'info, Token>,
     ) -> Result<()> {
         let (mint, from, to, amount) = deposit;
-        self.add_asset(mint.key(), authority, system_program)?;
-        process_transfer_to_pool(from, to, amount, authority, token_program)?;
-        Ok(())
+        match self.check_asset_key(&mint.key()) {
+            Ok(()) => {
+                process_transfer_to_pool(from, to, amount, authority, token_program)?;
+                Ok(())
+            }
+            Err(_) => Err(MarketPoolError::AssetKey.into()),
+        }
     }
 
     /// Processes the swap for the proposed assets
@@ -262,6 +299,28 @@ fn process_transfer_from_pool<'info>(
             },
             &[&[MarketPool::SEED_PREFIX.as_bytes(), &[pool.bump]]],
         ),
+        amount,
+    )
+}
+
+/// Process new mint to the market pool
+fn process_new_minting<'info>(
+    mint: &Account<'info, Mint>,
+    to: &Account<'info, TokenAccount>,
+    amount: u64,
+    token_program: &Program<'info, Token>,
+    signer_seeds: &[&[&[u8]]],
+) -> Result<()> {
+    token::mint_to(
+        CpiContext::new(
+            token_program.to_account_info(),
+            MintTo {
+                mint: mint.to_account_info(),
+                to: to.to_account_info(),
+                authority: mint.to_account_info(),
+            },
+        )
+        .with_signer(signer_seeds),
         amount,
     )
 }

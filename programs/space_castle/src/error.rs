@@ -13,6 +13,10 @@ pub enum MarketPoolError {
     #[msg("An invalid asset mint address was provided")]
     AssetKey,
 
+    /// The mint of the asset provided does not match any recognized mints
+    #[msg("An invalid asset mint was provided")]
+    AssetMint,
+
     /// The amount of the "pay" asset that a user has proposed to pay results,
     /// after calculation of the function `r = f(p)`, in a value for `r` that is
     /// less than 0, thus no assets will be moved and this swap will be rejected

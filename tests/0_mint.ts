@@ -15,6 +15,7 @@ describe('[Unit]: Mints', () => {
     'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
   )
 
+  // IGT
   const [mintIGT] = PublicKey.findProgramAddressSync(
     [Buffer.from('mint_igt')],
     program.programId,
@@ -27,7 +28,7 @@ describe('[Unit]: Mints', () => {
     ],
     METADATA_PROGRAM_ID,
   )
-
+  // METAL
   const [mintMetal] = PublicKey.findProgramAddressSync(
     [Buffer.from('mint_metal')],
     program.programId,
@@ -40,6 +41,19 @@ describe('[Unit]: Mints', () => {
     ],
     METADATA_PROGRAM_ID,
   )
+  // CHEMICAL
+  const [mintChemical] = PublicKey.findProgramAddressSync(
+    [Buffer.from('mint_chemical')],
+    program.programId,
+  )
+  const [metadataChemicalAccountAddress] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('metadata'),
+      METADATA_PROGRAM_ID.toBuffer(),
+      mintChemical.toBuffer(),
+    ],
+    METADATA_PROGRAM_ID,
+  )
 
   // Associated token account address
   const associatedTokenAccount = getAssociatedTokenAddressSync(
@@ -48,7 +62,7 @@ describe('[Unit]: Mints', () => {
   )
 
   it('Creates IGT Mint and metadata', async () => {
-    const txSig = await program.methods
+    await program.methods
       .mintInitIgt()
       .accounts({
         metadata: metadataIGTAccountAddress,
@@ -56,10 +70,9 @@ describe('[Unit]: Mints', () => {
       })
       .signers([payer])
       .rpc()
-    console.log(`Transaction Signature: ${txSig}`)
   })
   it('Creates Metal Mint and metadata + Metal authority', async () => {
-    const txSig = await program.methods
+    await program.methods
       .mintInitMetal()
       .accounts({
         metadata: metadataMetalAccountAddress,
@@ -67,13 +80,21 @@ describe('[Unit]: Mints', () => {
       })
       .signers([payer])
       .rpc()
-    console.log(`Transaction Signature: ${txSig}`)
+  })
+  it('Creates Chemical Mint and metadata + Chemical authority', async () => {
+    await program.methods
+      .mintInitChemical()
+      .accounts({
+        metadata: metadataChemicalAccountAddress,
+        payer: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc()
   })
   it('Mint some IGT to a player', async () => {
     try {
-      const amount = new anchor.BN(1000)
       const txSig = await program.methods
-        .mintIgt(amount)
+        .mintIgt(new anchor.BN(1000))
         .accounts({
           tokenAccount: associatedTokenAccount,
           payer: payer.publicKey,

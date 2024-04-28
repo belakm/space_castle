@@ -1,27 +1,36 @@
+use crate::{error::MarketPoolError, market_pool::*, seeds};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Token, TokenAccount},
+    token::{Mint, Token, TokenAccount},
 };
 
-use crate::market_pool::*;
-
-pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()> {
+pub fn market_pool_mint_to(
+    ctx: Context<MarketPoolMintTo>,
+    amount: u64,
+    resource: String,
+) -> Result<()> {
     let pool = &mut ctx.accounts.market_pool;
-
-    // Deposit: (From, To, amount)
-    let deposit = (
-        &ctx.accounts.mint,
-        &ctx.accounts.payer_token_account,
-        &ctx.accounts.pool_token_account,
-        amount,
-    );
-
-    pool.fund(deposit, &ctx.accounts.payer, &ctx.accounts.token_program)
+    let mint_seed = seeds::mintkey_to_seed(&resource);
+    match mint_seed {
+        Some(mint_seed) => {
+            let (_, mint_bump) = Pubkey::find_program_address(&[mint_seed], ctx.program_id);
+            pool.mint_to_pool(
+                &ctx.accounts.mint,
+                (mint_seed, mint_bump),
+                &ctx.accounts.pool_token_account,
+                amount,
+                &ctx.accounts.payer,
+                &ctx.accounts.system_program,
+                &ctx.accounts.token_program,
+            )
+        }
+        None => Err(MarketPoolError::AssetMint.into()),
+    }
 }
 
 #[derive(Accounts)]
-pub struct MarketPoolFund<'info> {
+pub struct MarketPoolMintTo<'info> {
     /// Liquidity Pool
     #[account(
         mut,
@@ -30,7 +39,8 @@ pub struct MarketPoolFund<'info> {
     )]
     pub market_pool: Account<'info, MarketPool>,
     /// The mint account for the asset being deposited into the pool
-    pub mint: Account<'info, token::Mint>,
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
     /// The Liquidity Pool's token account for the asset being deposited into
     /// the pool
     #[account(
@@ -40,14 +50,6 @@ pub struct MarketPoolFund<'info> {
         associated_token::authority = market_pool,
     )]
     pub pool_token_account: Account<'info, TokenAccount>,
-    /// The payer's - or Liquidity Provider's - token account for the asset
-    /// being deposited into the pool
-    #[account(
-        mut,
-        associated_token::mint = mint,
-        associated_token::authority = payer,
-    )]
-    pub payer_token_account: Account<'info, TokenAccount>,
     // Payer / Liquidity Provider
     #[account(mut)]
     pub payer: Signer<'info>,
