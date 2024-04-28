@@ -1,6 +1,7 @@
 mod error;
 pub mod instructions;
 mod market_pool;
+mod mint;
 mod planet;
 mod player;
 mod ship;
@@ -16,6 +17,19 @@ pub mod seeds {
     pub const PLANET_HOLDING: &[u8] = b"planet_holding";
     pub const SHIP: &[u8] = b"ship";
     pub const GAME: &[u8] = b"game";
+    pub const MINT_IGT: &[u8] = b"mint_igt";
+    pub const MINT_METAL: &[u8] = b"mint_metal";
+    pub const MINT_METAL_AUTH: &[u8] = b"mint_metal_auth";
+    pub const MINT_CRYSTAL: &[u8] = b"mint_crystal";
+    pub const MINT_CRYSTAL_AUTH: &[u8] = b"mint_crystal_auth";
+    pub const MINT_FUEL: &[u8] = b"mint_fuel";
+    pub const MINT_FUEL_AUTH: &[u8] = b"mint_fuel_auth";
+    pub const MINT_CHEMICAL: &[u8] = b"mint_chemical";
+    pub const MINT_CHEMICAL_AUTH: &[u8] = b"mint_chemical_auth";
+    pub const ACCOUNT_METAL: &[u8] = b"account_metal";
+    pub const ACCOUNT_CRYSTAL: &[u8] = b"account_crystal";
+    pub const ACCOUNT_CHEMICAL: &[u8] = b"account_chemical";
+    pub const ACCOUNT_FUEL: &[u8] = b"account_fuel";
 }
 
 #[program]
@@ -48,6 +62,14 @@ mod space_castle {
     /// Mint to X Account
     pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
         instructions::mint_igt(ctx, amount)
+    }
+    /// Create IGT Mint
+    pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
+        instructions::mint_init_metal(ctx)
+    }
+    /// Mint to X Account
+    pub fn mint_metal(ctx: Context<MintMetal>, amount: u64) -> Result<()> {
+        instructions::mint_metal(ctx, amount)
     }
 
     /// Metal

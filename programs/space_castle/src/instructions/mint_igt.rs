@@ -9,8 +9,10 @@ use anchor_spl::{
     },
 };
 
+use crate::seeds;
+
 pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[b"mint_igt", &[ctx.bumps.mint]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[ctx.bumps.mint]]];
     create_metadata_accounts_v3(
         CpiContext::new(
             ctx.accounts.token_metadata_program.to_account_info(),
@@ -42,7 +44,7 @@ pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
 }
 
 pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[b"mint_igt", &[ctx.bumps.mint]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[ctx.bumps.mint]]];
     token::mint_to(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -65,7 +67,7 @@ pub struct MintInitIGT<'info> {
     #[account(
         init, 
         payer = payer, 
-        seeds = [b"mint_igt"], 
+        seeds = [seeds::MINT_IGT], 
         bump, 
         mint::decimals = 9,
         mint::authority = mint,
@@ -88,7 +90,7 @@ pub struct MintIGT<'info> {
     pub payer: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"mint_igt"],
+        seeds = [seeds::MINT_IGT],
         bump
     )]
     pub mint: Account<'info, Mint>,
