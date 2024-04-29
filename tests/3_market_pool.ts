@@ -1,9 +1,11 @@
 import * as anchor from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
-import { PublicKey } from '@solana/web3.js'
+import { PublicKey, Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
 import { MARKET_RESOURCES } from './utils/resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
+import { createAndFundWallet } from './utils/wallet'
+import { mintAllResourcesToAddress } from './utils/token'
 
 describe('[Unit] Market pool', () => {
   const provider = anchor.AnchorProvider.env()
@@ -14,6 +16,7 @@ describe('[Unit] Market pool', () => {
     [Buffer.from('market_pool')],
     program.programId,
   )[0]
+  let playerWallet: Keypair
   let poolInitialized = false
 
   /**
@@ -29,29 +32,35 @@ describe('[Unit] Market pool', () => {
     }
   })
 
+  before(
+    'Prepare wallets and fund mock player wallet with resources',
+    async () => {
+      playerWallet = await createAndFundWallet()
+      mintAllResourcesToAddress(playerWallet)
+    },
+  )
+
   it('Init market pool', async () => {
     if (poolInitialized) {
       return assert.ok('Pool exists already.')
     }
-    const txSig = await program.methods
+    await program.methods
       .marketPoolCreate()
       .accounts({
         payer: payer.publicKey,
       })
       .signers([payer])
       .rpc()
-    console.log(`Transaction Signature: ${txSig}`)
   })
 
   it('Mint resources to pool', async () => {
     for (const resource of MARKET_RESOURCES) {
-      console.log(`\n\tMinting ${resource.mintKey} to the market pool\n`)
       const mint = PublicKey.findProgramAddressSync(
         [Buffer.from('mint_' + resource.mintKey)],
         program.programId,
       )
       const ata = getAssociatedTokenAddressSync(mint[0], poolAddress, true)
-      const txSig = await program.methods
+      await program.methods
         .marketPoolMintTo(new anchor.BN(resource.quantity), resource.mintKey)
         .accounts({
           mint: mint[0],
@@ -60,17 +69,16 @@ describe('[Unit] Market pool', () => {
         })
         .signers([payer])
         .rpc()
-
-      console.log(`Transaction Signature: ${txSig}`)
-
       const balance = await provider.connection.getTokenAccountBalance(ata)
-      console.log(`Balance: ${balance.value.uiAmount} ${resource.symbol}`)
+      console.log(
+        `\tMinted: ${balance.value.uiAmount} ${resource.symbol} to market pool`,
+      )
     }
   })
 
-  it('Try swapping resources for IGT', async () => { })
+  it('Swapping resources for IGT', async () => {})
 
-  it('Try swapping IGT for resources', async () => { })
+  it('Swapping IGT for resources', async () => {})
 
-  it('Try swapping resources for resources', async () => { })
+  it('Swapping resources for resources', async () => {})
 })

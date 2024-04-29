@@ -31,7 +31,7 @@ pub fn market_pool_mint_to(
 
 #[derive(Accounts)]
 pub struct MarketPoolMintTo<'info> {
-    /// Liquidity Pool
+    /// Market Pool
     #[account(
         mut,
         seeds = [MarketPool::SEED_PREFIX.as_bytes()],
@@ -41,7 +41,7 @@ pub struct MarketPoolMintTo<'info> {
     /// The mint account for the asset being deposited into the pool
     #[account(mut)]
     pub mint: Account<'info, Mint>,
-    /// The Liquidity Pool's token account for the asset being deposited into
+    /// The Market Pool's token account for the asset being deposited into
     /// the pool
     #[account(
         init_if_needed,
@@ -53,13 +53,13 @@ pub struct MarketPoolMintTo<'info> {
     // Payer / Liquidity Provider
     #[account(mut)]
     pub payer: Signer<'info>,
-    /// System Program: Required for creating the Liquidity Pool's token account
+    /// System Program: Required for creating the Market Pool's token account
     /// for the asset being deposited into the pool
     pub system_program: Program<'info, System>,
     /// Token Program: Required for transferring the assets from the Liquidity
-    /// Provider's token account into the Liquidity Pool's token account
+    /// Provider's token account into the Market Pool's token account
     pub token_program: Program<'info, Token>,
-    /// Associated Token Program: Required for creating the Liquidity Pool's
+    /// Associated Token Program: Required for creating the Market Pool's
     /// token account for the asset being deposited into the pool
     pub associated_token_program: Program<'info, AssociatedToken>,
 }

@@ -2,7 +2,6 @@ import * as anchor from '@coral-xyz/anchor'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import { SpaceCastle } from '../target/types/space_castle'
-import { assert } from 'chai'
 
 describe('[Unit]: Mints', () => {
   const provider = anchor.AnchorProvider.env()
@@ -92,25 +91,33 @@ describe('[Unit]: Mints', () => {
       .rpc()
   })
   it('Mint some IGT to a player', async () => {
-    try {
-      const txSig = await program.methods
-        .mintIgt(new anchor.BN(1000))
-        .accounts({
-          tokenAccount: associatedTokenAccount,
-          payer: payer.publicKey,
-        })
-        .signers([payer])
-        .rpc()
-
-      console.log(`Transaction Signature: ${txSig}`)
-
-      const balance = await provider.connection.getTokenAccountBalance(
-        associatedTokenAccount,
-      )
-      console.log(`Balance: ${balance.value.uiAmount}`)
-    } catch (e) {
-      console.error(e)
-      assert.fail('Failed')
-    }
+    await program.methods
+      .mintIgt(new anchor.BN(1000))
+      .accounts({
+        tokenAccount: associatedTokenAccount,
+        payer: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc()
+    const balance = await provider.connection.getTokenAccountBalance(
+      associatedTokenAccount,
+    )
+    console.log(`\n\tPlayer balance: ${balance.value.uiAmount} IGT`)
+  })
+  it('Mint some metal to a player', async () => {
+    const [signer_pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('account_metal'), payer.publicKey.toBuffer()],
+      program.programId,
+    )
+    // const ata = getAssociatedTokenAddressSync(mintMetal, signer_pda, true)
+    await program.methods
+      .mintMetal(new anchor.BN(1000))
+      .accounts({
+        payer: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc()
+    const balance = await provider.connection.getTokenAccountBalance(signer_pda)
+    console.log(`\n\tPlayer balance: ${balance.value.uiAmount} rMET`)
   })
 })

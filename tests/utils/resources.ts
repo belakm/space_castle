@@ -25,7 +25,7 @@ export const MARKET_RESOURCES: Array<MarketResourceMetadata> = [
     mintKey: 'metal',
   },
   {
-    name: 'Metals',
+    name: 'Chemicals',
     symbol: 'rCHEM',
     decimals: 6,
     quantity: 10000,

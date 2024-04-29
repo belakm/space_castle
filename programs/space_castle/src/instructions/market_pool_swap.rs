@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{associated_token::AssociatedToken, token, token::Token};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
 use crate::error::*;
 use crate::market_pool::*;
@@ -50,7 +53,7 @@ pub struct MarketPoolSwap<'info> {
     #[account(
         constraint = !receive_mint.key().eq(&pay_mint.key()) @ MarketPoolError::SwapMatchingAssets
     )]
-    pub receive_mint: Box<Account<'info, token::Mint>>,
+    pub receive_mint: Box<Account<'info, Mint>>,
     /// The Market Pool's token account for the mint of the asset the user is
     /// requesting to receive in exchange (which will be debited)
     #[account(
@@ -58,7 +61,7 @@ pub struct MarketPoolSwap<'info> {
         associated_token::mint = receive_mint,
         associated_token::authority = pool,
     )]
-    pub pool_receive_token_account: Box<Account<'info, token::TokenAccount>>,
+    pub pool_receive_token_account: Box<Account<'info, TokenAccount>>,
     /// The user's token account for the mint of the asset the user is
     /// requesting to receive in exchange (which will be credited)
     #[account(
@@ -67,9 +70,9 @@ pub struct MarketPoolSwap<'info> {
         associated_token::mint = receive_mint,
         associated_token::authority = payer,
     )]
-    pub payer_receive_token_account: Box<Account<'info, token::TokenAccount>>,
+    pub payer_receive_token_account: Box<Account<'info, TokenAccount>>,
     /// The mint account for the asset the user is proposing to pay in the swap
-    pub pay_mint: Box<Account<'info, token::Mint>>,
+    pub pay_mint: Box<Account<'info, Mint>>,
     /// The Market Pool's token account for the mint of the asset the user is
     /// proposing to pay in the swap (which will be credited)
     #[account(
@@ -77,7 +80,7 @@ pub struct MarketPoolSwap<'info> {
         associated_token::mint = pay_mint,
         associated_token::authority = pool,
     )]
-    pub pool_pay_token_account: Box<Account<'info, token::TokenAccount>>,
+    pub pool_pay_token_account: Box<Account<'info, TokenAccount>>,
     /// The user's token account for the mint of the asset the user is
     /// proposing to pay in the swap (which will be debited)
     #[account(
@@ -85,13 +88,13 @@ pub struct MarketPoolSwap<'info> {
         associated_token::mint = pay_mint,
         associated_token::authority = payer,
     )]
-    pub payer_pay_token_account: Box<Account<'info, token::TokenAccount>>,
+    pub payer_pay_token_account: Box<Account<'info, TokenAccount>>,
     /// The authority requesting to swap (user)
     #[account(mut)]
     pub payer: Signer<'info>,
     /// Token Program: Required for transferring the assets between all token
     /// accounts involved in the swap
-    pub token_program: Program<'info, token::Token>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }

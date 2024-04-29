@@ -51,7 +51,7 @@ pub fn mint_chemicals(ctx: Context<MintChemicals>, amount: u64) -> Result<()> {
             MintTo {
                 mint: ctx.accounts.mint.to_account_info(),
                 to: ctx.accounts.token_account.to_account_info(),
-                authority: ctx.accounts.mint_authority.to_account_info(),
+                authority: ctx.accounts.mint.to_account_info(),
             },
         )
         .with_signer(signer_seeds),
@@ -118,7 +118,6 @@ pub struct MintChemicals<'info> {
     )]
     pub token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
