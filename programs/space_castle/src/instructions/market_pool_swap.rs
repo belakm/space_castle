@@ -4,10 +4,14 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::error::*;
 use crate::market_pool::*;
+use crate::{error::*, seeds};
 
-pub fn market_pool_swap(ctx: Context<MarketPoolSwap>, amount_to_swap: u64) -> Result<()> {
+pub fn market_pool_swap(
+    ctx: Context<MarketPoolSwap>,
+    amount_to_swap: u64,
+    pay_mint_key: String,
+) -> Result<()> {
     if amount_to_swap == 0 {
         return Err(MarketPoolError::SwapZeroAmount.into());
     }
@@ -35,6 +39,8 @@ pub fn market_pool_swap(ctx: Context<MarketPoolSwap>, amount_to_swap: u64) -> Re
         receive,
         pay,
         &ctx.accounts.payer,
+        pay_mint_key,
+        &ctx.program_id,
         &ctx.accounts.token_program,
     )
 }

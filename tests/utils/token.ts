@@ -39,6 +39,8 @@ export async function mintAllResourcesToAddress(signer: Signer) {
     chemical: program.methods.mintChemicals,
   }
 
+  console.log('\n\tMinting for address: ', signer.publicKey.toString())
+
   for (const resource of MARKET_RESOURCES) {
     const [mint] = PublicKey.findProgramAddressSync(
       [Buffer.from('mint_' + resource.mintKey)],
@@ -50,7 +52,7 @@ export async function mintAllResourcesToAddress(signer: Signer) {
         signer.publicKey,
       )
       await program.methods
-        .mintIgt(new anchor.BN(1000))
+        .mintIgt(new anchor.BN(1000000))
         .accounts({
           tokenAccount: associatedTokenAccount,
           payer: signer.publicKey,
@@ -71,9 +73,10 @@ export async function mintAllResourcesToAddress(signer: Signer) {
         ],
         program.programId,
       )
-      await methods[resource.mintKey]({
-        payer: signer.publicKey,
-      })
+      await methods[resource.mintKey](new anchor.BN(10000))
+        .accounts({
+          payer: signer.publicKey,
+        })
         .signers([signer])
         .rpc()
       const balance =

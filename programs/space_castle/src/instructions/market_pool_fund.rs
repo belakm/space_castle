@@ -6,9 +6,8 @@ use anchor_spl::{
 
 use crate::market_pool::*;
 
-pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()> {
+pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64, mint_key: String) -> Result<()> {
     let pool = &mut ctx.accounts.market_pool;
-
     // Deposit: (From, To, amount)
     let deposit = (
         &ctx.accounts.mint,
@@ -17,7 +16,13 @@ pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()>
         amount,
     );
 
-    pool.fund(deposit, &ctx.accounts.payer, &ctx.accounts.token_program)
+    pool.fund(
+        deposit,
+        &ctx.accounts.payer,
+        mint_key,
+        &ctx.program_id,
+        &ctx.accounts.token_program,
+    )
 }
 
 #[derive(Accounts)]

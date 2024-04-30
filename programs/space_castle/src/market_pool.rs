@@ -2,7 +2,7 @@ use anchor_lang::{prelude::*, system_program};
 use anchor_spl::token::{self, transfer, Mint, MintTo, Token, TokenAccount, Transfer};
 use std::ops::{Add, Div, Mul};
 
-use crate::error::MarketPoolError;
+use crate::{error::MarketPoolError, seeds};
 
 #[account]
 pub struct MarketPool {
@@ -49,6 +49,8 @@ pub trait MarketPoolAccount<'info> {
             u64,
         ),
         authority: &Signer<'info>,
+        mint_key: String,
+        program_id: &Pubkey,
         token_program: &Program<'info, Token>,
     ) -> Result<()>;
     fn mint_to_pool(
@@ -75,6 +77,8 @@ pub trait MarketPoolAccount<'info> {
             u64,
         ),
         authority: &Signer<'info>,
+        mint_key: String,
+        program_id: &Pubkey,
         token_program: &Program<'info, Token>,
     ) -> Result<()>;
 }
@@ -187,12 +191,22 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
             u64,
         ),
         authority: &Signer<'info>,
+        mint_key: String,
+        program_id: &Pubkey,
         token_program: &Program<'info, Token>,
     ) -> Result<()> {
         let (mint, from, to, amount) = deposit;
         match self.check_asset_key(&mint.key()) {
             Ok(()) => {
-                process_transfer_to_pool(from, to, amount, authority, token_program)?;
+                process_transfer_to_pool(
+                    from,
+                    to,
+                    amount,
+                    authority,
+                    mint_key,
+                    program_id,
+                    token_program,
+                )?;
                 Ok(())
             }
             Err(_) => Err(MarketPoolError::AssetKey.into()),
@@ -225,6 +239,8 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
             u64,
         ),
         authority: &Signer<'info>,
+        mint_key: String,
+        program_id: &Pubkey,
         token_program: &Program<'info, Token>,
     ) -> Result<()> {
         // (From, To)
@@ -245,7 +261,15 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
         if receive_amount == 0 {
             Err(MarketPoolError::SwapNotEnoughPay.into())
         } else {
-            process_transfer_to_pool(payer_pay, pool_pay, pay_amount, authority, token_program)?;
+            process_transfer_to_pool(
+                payer_pay,
+                pool_pay,
+                pay_amount,
+                authority,
+                mint_key,
+                program_id,
+                token_program,
+            )?;
             process_transfer_from_pool(
                 pool_recieve,
                 payer_recieve,
@@ -265,19 +289,39 @@ fn process_transfer_to_pool<'info>(
     to: &Account<'info, TokenAccount>,
     amount: u64,
     authority: &Signer<'info>,
+    mint_key: String,
+    program_id: &Pubkey,
     token_program: &Program<'info, Token>,
 ) -> Result<()> {
-    transfer(
-        CpiContext::new(
-            token_program.to_account_info(),
-            Transfer {
-                from: from.to_account_info(),
-                to: to.to_account_info(),
-                authority: authority.to_account_info(),
-            },
-        ),
-        amount,
-    )
+    let pay_mint_seed = seeds::mintkey_to_seed(&mint_key).ok_or(MarketPoolError::AssetKey)?;
+    if pay_mint_seed != seeds::MINT_IGT {
+        let (_, bump) = Pubkey::find_program_address(&[pay_mint_seed], program_id);
+        let signer_seeds: &[&[&[u8]]] = &[&[pay_mint_seed, &[bump]]];
+        transfer(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(),
+                Transfer {
+                    from: from.to_account_info(),
+                    to: to.to_account_info(),
+                    authority: authority.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            amount,
+        )
+    } else {
+        transfer(
+            CpiContext::new(
+                token_program.to_account_info(),
+                Transfer {
+                    from: from.to_account_info(),
+                    to: to.to_account_info(),
+                    authority: authority.to_account_info(),
+                },
+            ),
+            amount,
+        )
+    }
 }
 
 /// Process a transfer from the pool's token account to the

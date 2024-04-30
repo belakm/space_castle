@@ -76,9 +76,75 @@ describe('[Unit] Market pool', () => {
     }
   })
 
-  it('Swapping resources for IGT', async () => {})
+  it('Swapping all of the resources on the market', async () => {
+    for (const payResource of MARKET_RESOURCES) {
+      for (const recieveResource of MARKET_RESOURCES) {
+        if (payResource.symbol !== recieveResource.symbol) {
+          const quantity = Math.floor(Math.random() * 5) + 100
+          console.log(
+            `\tSwapping ${quantity} ${payResource.symbol} for ${recieveResource.symbol}.`,
+          )
+          const [payMint] = PublicKey.findProgramAddressSync(
+            [Buffer.from('mint_' + payResource.mintKey)],
+            program.programId,
+          )
+          const [receiveMint] = PublicKey.findProgramAddressSync(
+            [Buffer.from('mint_' + recieveResource.mintKey)],
+            program.programId,
+          )
+          const [pool] = PublicKey.findProgramAddressSync(
+            [Buffer.from('market_pool')],
+            program.programId,
+          )
+          const payerPayTokenAccount =
+            payResource.mintKey === 'igt'
+              ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)
+              : PublicKey.findProgramAddressSync(
+                [
+                  Buffer.from('account_' + payResource.mintKey),
+                  playerWallet.publicKey.toBuffer(),
+                ],
+                program.programId,
+              )[0]
 
-  it('Swapping IGT for resources', async () => {})
-
-  it('Swapping resources for resources', async () => {})
+          const payerReceiveTokenAccount =
+            payResource.mintKey === 'igt'
+              ? getAssociatedTokenAddressSync(
+                receiveMint,
+                playerWallet.publicKey,
+              )
+              : PublicKey.findProgramAddressSync(
+                [
+                  Buffer.from('account_' + recieveResource.mintKey),
+                  playerWallet.publicKey.toBuffer(),
+                ],
+                program.programId,
+              )[0]
+          const poolPayTokenAccount = getAssociatedTokenAddressSync(
+            payMint,
+            pool,
+            true,
+          )
+          const poolReceiveTokenAccount = getAssociatedTokenAddressSync(
+            receiveMint,
+            pool,
+            true,
+          )
+          await program.methods
+            .marketPoolSwap(new anchor.BN(quantity), payResource.mintKey)
+            .accounts({
+              payer: playerWallet.publicKey,
+              poolPayTokenAccount,
+              poolReceiveTokenAccount,
+              payerPayTokenAccount,
+              payerReceiveTokenAccount,
+              payMint,
+              receiveMint,
+            })
+            .signers([playerWallet])
+            .rpc()
+        }
+      }
+    }
+  })
 })

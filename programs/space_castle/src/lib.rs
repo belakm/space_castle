@@ -109,11 +109,19 @@ mod space_castle {
         instructions::market_pool_mint_to(ctx, amount, resource)
     }
     /// Market pool - Provide liquidity to the pool by funding it with some asset
-    pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64) -> Result<()> {
-        instructions::market_pool_fund(ctx, amount)
+    pub fn market_pool_fund(
+        ctx: Context<MarketPoolFund>,
+        amount: u64,
+        mint_key: String,
+    ) -> Result<()> {
+        instructions::market_pool_fund(ctx, amount, mint_key)
     }
     /// Market pool - swap assets in the Market pool
-    pub fn market_pool_swap(ctx: Context<MarketPoolSwap>, amount_to_swap: u64) -> Result<()> {
-        instructions::market_pool_swap(ctx, amount_to_swap)
+    pub fn market_pool_swap(
+        ctx: Context<MarketPoolSwap>,
+        amount_to_swap: u64,
+        pay_mint_key: String,
+    ) -> Result<()> {
+        instructions::market_pool_swap(ctx, amount_to_swap, pay_mint_key)
     }
 }
