@@ -82,7 +82,7 @@ export async function mintAllResourcesToAddress(signer: Signer) {
       const balance =
         await provider.connection.getTokenAccountBalance(signer_pda)
       console.log(
-        `\tPlayer balance of ${resource.name}: ${balance.value.uiAmount} ${resource.symbol}`,
+        `\tPlayer balance of ${resource.name}: ${balance.value.uiAmount} ${resource.symbol}\npda acc: ${signer_pda}\n`,
       )
     }
   }

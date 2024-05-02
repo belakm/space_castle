@@ -1,30 +1,20 @@
+use crate::{error::*, market_pool::*, resource::ResourceAuthority, seeds};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::market_pool::*;
-use crate::{error::*, seeds};
-
 pub fn market_pool_swap(
     ctx: Context<MarketPoolSwap>,
     amount_to_swap: u64,
-    pay_mint_key: String,
+    pay_in_resource: bool,
 ) -> Result<()> {
     if amount_to_swap == 0 {
         return Err(MarketPoolError::SwapZeroAmount.into());
     }
 
     let pool = &mut ctx.accounts.pool;
-
-    // Receive: The assets the user is requesting to receive in exchange:
-    // (Mint, From, To)
-    let receive = (
-        ctx.accounts.receive_mint.as_ref(),
-        ctx.accounts.pool_receive_token_account.as_ref(),
-        ctx.accounts.payer_receive_token_account.as_ref(),
-    );
 
     // Pay: The assets the user is proposing to pay in the swap:
     // (Mint, From, To, Amount)
@@ -35,12 +25,23 @@ pub fn market_pool_swap(
         amount_to_swap,
     );
 
+    // Receive: The assets the user is requesting to receive in exchange:
+    // (Mint, From, To)
+    let receive = (
+        ctx.accounts.receive_mint.as_ref(),
+        ctx.accounts.pool_receive_token_account.as_ref(),
+        ctx.accounts.payer_receive_token_account.as_ref(),
+    );
+
     pool.process_swap(
         receive,
         pay,
         &ctx.accounts.payer,
-        pay_mint_key,
-        &ctx.program_id,
+        (
+            &ctx.accounts.resource_authority,
+            ctx.bumps.resource_authority,
+        ),
+        pay_in_resource,
         &ctx.accounts.token_program,
     )
 }
@@ -54,6 +55,13 @@ pub struct MarketPoolSwap<'info> {
         bump = pool.bump,
     )]
     pub pool: Account<'info, MarketPool>,
+    /// RESOURCE AUTH
+    #[account(
+        mut,
+        seeds = [seeds::RESOURCE_AUTHORITY],
+        bump,
+    )]
+    pub resource_authority: Account<'info, ResourceAuthority>,
     /// The mint account for the asset the user is requesting to receive in
     /// exchange
     #[account(
@@ -71,10 +79,8 @@ pub struct MarketPoolSwap<'info> {
     /// The user's token account for the mint of the asset the user is
     /// requesting to receive in exchange (which will be credited)
     #[account(
-        init_if_needed,
-        payer = payer,
-        associated_token::mint = receive_mint,
-        associated_token::authority = payer,
+        mut,
+        token::mint = receive_mint,
     )]
     pub payer_receive_token_account: Box<Account<'info, TokenAccount>>,
     /// The mint account for the asset the user is proposing to pay in the swap
@@ -91,8 +97,7 @@ pub struct MarketPoolSwap<'info> {
     /// proposing to pay in the swap (which will be debited)
     #[account(
         mut,
-        associated_token::mint = pay_mint,
-        associated_token::authority = payer,
+        token::mint = pay_mint,
     )]
     pub payer_pay_token_account: Box<Account<'info, TokenAccount>>,
     /// The authority requesting to swap (user)

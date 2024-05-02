@@ -1,9 +1,9 @@
 mod error;
 pub mod instructions;
 mod market_pool;
-mod mint;
 mod planet;
 mod player;
+mod resource;
 mod ship;
 
 use anchor_lang::prelude::*;
@@ -17,15 +17,12 @@ pub mod seeds {
     pub const PLANET_HOLDING: &[u8] = b"planet_holding";
     pub const SHIP: &[u8] = b"ship";
     pub const GAME: &[u8] = b"game";
+    pub const RESOURCE_AUTHORITY: &[u8] = b"resource_authority";
     pub const MINT_IGT: &[u8] = b"mint_igt";
     pub const MINT_METAL: &[u8] = b"mint_metal";
-    pub const MINT_METAL_AUTH: &[u8] = b"mint_metal_auth";
     pub const MINT_CRYSTAL: &[u8] = b"mint_crystal";
-    pub const MINT_CRYSTAL_AUTH: &[u8] = b"mint_crystal_auth";
     pub const MINT_FUEL: &[u8] = b"mint_fuel";
-    pub const MINT_FUEL_AUTH: &[u8] = b"mint_fuel_auth";
     pub const MINT_CHEMICAL: &[u8] = b"mint_chemical";
-    pub const MINT_CHEMICAL_AUTH: &[u8] = b"mint_chemical_auth";
     pub const ACCOUNT_METAL: &[u8] = b"account_metal";
     pub const ACCOUNT_CRYSTAL: &[u8] = b"account_crystal";
     pub const ACCOUNT_CHEMICAL: &[u8] = b"account_chemical";
@@ -112,16 +109,16 @@ mod space_castle {
     pub fn market_pool_fund(
         ctx: Context<MarketPoolFund>,
         amount: u64,
-        mint_key: String,
+        pay_in_resource: bool,
     ) -> Result<()> {
-        instructions::market_pool_fund(ctx, amount, mint_key)
+        instructions::market_pool_fund(ctx, amount, pay_in_resource)
     }
     /// Market pool - swap assets in the Market pool
     pub fn market_pool_swap(
         ctx: Context<MarketPoolSwap>,
         amount_to_swap: u64,
-        pay_mint_key: String,
+        pay_in_resource: bool,
     ) -> Result<()> {
-        instructions::market_pool_swap(ctx, amount_to_swap, pay_mint_key)
+        instructions::market_pool_swap(ctx, amount_to_swap, pay_in_resource)
     }
 }

@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token::{self, Mint, MintTo, Token, TokenAccount}, 
-    associated_token::AssociatedToken,
     metadata::{
         create_metadata_accounts_v3,
         mpl_token_metadata::types::DataV2,
@@ -9,7 +8,7 @@ use anchor_spl::{
     },
 };
 
-use crate::{mint::MintAuthority, seeds};
+use crate::{resource::ResourceAuthority, seeds};
 
 pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[ctx.bumps.mint]]];
@@ -74,13 +73,13 @@ pub struct MintInitChemical<'info> {
     )]
     pub mint: Account<'info, Mint>,
     #[account(
-        init,
+        init_if_needed,
         payer = payer,
-        seeds = [seeds::MINT_CHEMICAL_AUTH],
+        seeds = [seeds::RESOURCE_AUTHORITY],
         bump,
-        space = 8 + MintAuthority::INIT_SPACE
+        space = 8 + ResourceAuthority::INIT_SPACE
     )]
-    pub mint_authority: Account<'info, MintAuthority>,
+    pub resource_authority: Account<'info, ResourceAuthority>,
     /// CHECK: Validate with constraint, also checked by metadata program
     #[account(
         mut,
@@ -98,10 +97,10 @@ pub struct MintChemicals<'info> {
     pub payer: Signer<'info>,
     #[account(
         mut,
-        seeds = [seeds::MINT_CHEMICAL_AUTH],
+        seeds = [seeds::RESOURCE_AUTHORITY],
         bump
     )]
-    pub mint_authority: Account<'info, MintAuthority>,
+    pub resource_authority: Account<'info, ResourceAuthority>,
     #[account(
         mut,
         seeds = [seeds::MINT_CHEMICAL],
@@ -114,7 +113,7 @@ pub struct MintChemicals<'info> {
         seeds = [seeds::ACCOUNT_CHEMICAL, payer.key().as_ref()],
         bump,
         token::mint = mint, 
-        token::authority = mint_authority 
+        token::authority = resource_authority 
     )]
     pub token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,

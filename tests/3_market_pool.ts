@@ -6,6 +6,13 @@ import { MARKET_RESOURCES } from './utils/resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import { createAndFundWallet } from './utils/wallet'
 import { mintAllResourcesToAddress } from './utils/token'
+import {
+  calculateChangeInK,
+  calculateK,
+  fetchPool,
+  fetchPoolTokenAccounts,
+} from './utils/swap'
+import { logChangeInK, logPool } from './utils/log'
 
 describe('[Unit] Market pool', () => {
   const provider = anchor.AnchorProvider.env()
@@ -18,6 +25,32 @@ describe('[Unit] Market pool', () => {
   )[0]
   let playerWallet: Keypair
   let poolInitialized = false
+
+  /**
+   *
+   * Calculates the Liquidity Pool's holdings (assets held in each token account)
+   *
+   * @param log A flag provided telling this function whether or not to print to logs
+   * @returns The constant-product `K` (Constant-Product Algorithm)
+   */
+  async function getPoolData(): Promise<bigint> {
+    const pool = await fetchPool(program, poolAddress)
+    const poolTokenAccounts = await fetchPoolTokenAccounts(
+      provider.connection,
+      poolAddress,
+      pool,
+    )
+    const k = calculateK(poolTokenAccounts)
+    await logPool(
+      provider.connection,
+      program.programId,
+      poolAddress,
+      poolTokenAccounts,
+      k,
+    )
+
+    return k
+  }
 
   /**
    * Check if the Liquidity Pool exists and set the flag
@@ -77,19 +110,23 @@ describe('[Unit] Market pool', () => {
   })
 
   it('Swapping all of the resources on the market', async () => {
+    const initialK = await getPoolData()
     for (const payResource of MARKET_RESOURCES) {
-      for (const recieveResource of MARKET_RESOURCES) {
-        if (payResource.symbol !== recieveResource.symbol) {
-          const quantity = Math.floor(Math.random() * 5) + 100
+      for (const receiveResource of MARKET_RESOURCES) {
+        if (payResource.symbol !== receiveResource.symbol) {
+          const quantity =
+            Math.floor(Math.random() * 5) +
+            100 +
+            (payResource.mintKey === 'igt' ? 10000 : 0)
           console.log(
-            `\tSwapping ${quantity} ${payResource.symbol} for ${recieveResource.symbol}.`,
+            `\tSwapping ${quantity} ${payResource.symbol} for ${receiveResource.symbol}.`,
           )
           const [payMint] = PublicKey.findProgramAddressSync(
             [Buffer.from('mint_' + payResource.mintKey)],
             program.programId,
           )
           const [receiveMint] = PublicKey.findProgramAddressSync(
-            [Buffer.from('mint_' + recieveResource.mintKey)],
+            [Buffer.from('mint_' + receiveResource.mintKey)],
             program.programId,
           )
           const [pool] = PublicKey.findProgramAddressSync(
@@ -100,26 +137,27 @@ describe('[Unit] Market pool', () => {
             payResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)
               : PublicKey.findProgramAddressSync(
-                [
-                  Buffer.from('account_' + payResource.mintKey),
-                  playerWallet.publicKey.toBuffer(),
-                ],
-                program.programId,
-              )[0]
+                  [
+                    Buffer.from('account_' + payResource.mintKey),
+                    playerWallet.publicKey.toBuffer(),
+                  ],
+                  program.programId,
+                )[0]
 
           const payerReceiveTokenAccount =
-            payResource.mintKey === 'igt'
+            receiveResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(
-                receiveMint,
-                playerWallet.publicKey,
-              )
+                  receiveMint,
+                  playerWallet.publicKey,
+                )
               : PublicKey.findProgramAddressSync(
-                [
-                  Buffer.from('account_' + recieveResource.mintKey),
-                  playerWallet.publicKey.toBuffer(),
-                ],
-                program.programId,
-              )[0]
+                  [
+                    Buffer.from('account_' + receiveResource.mintKey),
+                    playerWallet.publicKey.toBuffer(),
+                  ],
+                  program.programId,
+                )[0]
+
           const poolPayTokenAccount = getAssociatedTokenAddressSync(
             payMint,
             pool,
@@ -130,8 +168,12 @@ describe('[Unit] Market pool', () => {
             pool,
             true,
           )
+
           await program.methods
-            .marketPoolSwap(new anchor.BN(quantity), payResource.mintKey)
+            .marketPoolSwap(
+              new anchor.BN(quantity),
+              payResource.mintKey !== 'igt',
+            )
             .accounts({
               payer: playerWallet.publicKey,
               poolPayTokenAccount,
@@ -146,5 +188,7 @@ describe('[Unit] Market pool', () => {
         }
       }
     }
+    const resultingK = await getPoolData()
+    logChangeInK(calculateChangeInK(initialK, resultingK))
   })
 })

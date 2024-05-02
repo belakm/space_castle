@@ -2,6 +2,7 @@ import { Account as TokenAccount, getMint } from '@solana/spl-token'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { fromBigIntQuantity } from './token'
 import { calculateBalances } from './swap'
+import { MARKET_RESOURCES } from './resources'
 
 /**
  * Log a line break
@@ -28,11 +29,11 @@ export function logNewMint(
   signature: string,
 ) {
   lineBreak()
-  console.log(`   Mint: ${name}`)
-  console.log(`       Address:    ${mint.toBase58()}`)
-  console.log(`       Decimals:   ${decimals}`)
-  console.log(`       Quantity:   ${quantity}`)
-  console.log(`       Transaction Signature: ${signature}`)
+  console.log(`Mint: ${name}`)
+  console.log(`Address:    ${mint.toBase58()}`)
+  console.log(`Decimals:   ${decimals}`)
+  console.log(`Quantity:   ${quantity}`)
+  console.log(`Transaction Signature: ${signature}`)
   lineBreak()
 }
 
@@ -158,41 +159,40 @@ export async function logPostSwap(
  * Logs the Liquidity Pool's holdings (assets held in each token account)
  *
  * @param connection Connection to Solana RPC
+ * @param programId Program Id
  * @param poolAddress Address of the Liquidity Pool
  * @param tokenAccounts All token accounts owned by the Liquidity Pool
- * @param assets The assets from the configuration file
  * @param k The constant-product `K` (Constant-Product Algorithm)
  */
 export async function logPool(
   connection: Connection,
+  programId: PublicKey,
   poolAddress: PublicKey,
   tokenAccounts: TokenAccount[],
-  assets: {
-    name: string
-    quantity: number
-    decimals: number
-    address: PublicKey
-  }[],
   k: bigint,
 ) {
   function getHoldings(mint: PublicKey, tokenAccounts: TokenAccount[]): bigint {
     const holding = tokenAccounts.find((account) => account.mint.equals(mint))
     return holding?.amount || BigInt(0)
   }
-  const padding = assets.reduce((max, a) => Math.max(max, a.name.length), 0)
+  const padding = MARKET_RESOURCES.reduce(
+    (max, a) => Math.max(max, a.name.length),
+    0,
+  )
   lineBreak()
-  console.log('   Liquidity Pool:')
-  console.log(`       Address:    ${poolAddress.toBase58()}`)
-  console.log('       Holdings:')
-  for (const a of assets) {
-    const holding = getHoldings(a.address, tokenAccounts)
-    const mint = await getMint(connection, a.address)
-    const normalizedHolding = fromBigIntQuantity(holding, mint.decimals)
+  console.log('Liquidity Pool:')
+  console.log(`Address:    ${poolAddress.toBase58()}`)
+  console.log('Holdings:')
+  for (const a of MARKET_RESOURCES) {
+    const mint = PublicKey.findProgramAddressSync(
+      [Buffer.from('mint_' + a.mintKey)],
+      programId,
+    )[0]
+    const holding = getHoldings(mint, tokenAccounts)
+    const mint_data = await getMint(connection, mint)
+    const normalizedHolding = fromBigIntQuantity(holding, mint_data.decimals)
     console.log(
-      `                   ${a.name.padEnd(
-        padding,
-        ' ',
-      )} : ${normalizedHolding.padStart(12, ' ')} : ${a.address.toBase58()}`,
+      `\t${a.name.padEnd(padding, ' ')} : ${normalizedHolding.padStart(12, ' ')} : ${mint.toBase58()}`,
     )
   }
   logK(k)
@@ -206,7 +206,7 @@ export async function logPool(
  * @param k The constant-product `K` (Constant-Product Algorithm)
  */
 export function logK(k: bigint) {
-  console.log(`   ** Constant-Product (K): ${k.toString()}`)
+  console.log(`** Constant-Product (K): ${k.toString()}`)
 }
 
 /**
@@ -217,5 +217,5 @@ export function logK(k: bigint) {
  * (Constant-Product Algorithm)
  */
 export function logChangeInK(changeInK: string) {
-  console.log(`   ** Δ Change in Constant-Product (K): ${changeInK}`)
+  console.log(`** Δ Change in Constant-Product (K): ${changeInK}`)
 }

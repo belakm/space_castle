@@ -2,7 +2,7 @@ use anchor_lang::{prelude::*, system_program};
 use anchor_spl::token::{self, transfer, Mint, MintTo, Token, TokenAccount, Transfer};
 use std::ops::{Add, Div, Mul};
 
-use crate::{error::MarketPoolError, seeds};
+use crate::{error::MarketPoolError, resource::ResourceAuthority, seeds};
 
 #[account]
 pub struct MarketPool {
@@ -49,8 +49,8 @@ pub trait MarketPoolAccount<'info> {
             u64,
         ),
         authority: &Signer<'info>,
-        mint_key: String,
-        program_id: &Pubkey,
+        resource_authority_data: (&Account<'info, ResourceAuthority>, u8),
+        is_resource: bool,
         token_program: &Program<'info, Token>,
     ) -> Result<()>;
     fn mint_to_pool(
@@ -77,8 +77,8 @@ pub trait MarketPoolAccount<'info> {
             u64,
         ),
         authority: &Signer<'info>,
-        mint_key: String,
-        program_id: &Pubkey,
+        resource_authority_data: (&Account<'info, ResourceAuthority>, u8),
+        is_resource: bool,
         token_program: &Program<'info, Token>,
     ) -> Result<()>;
 }
@@ -191,8 +191,8 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
             u64,
         ),
         authority: &Signer<'info>,
-        mint_key: String,
-        program_id: &Pubkey,
+        resource_authority_data: (&Account<'info, ResourceAuthority>, u8),
+        is_resource: bool,
         token_program: &Program<'info, Token>,
     ) -> Result<()> {
         let (mint, from, to, amount) = deposit;
@@ -203,8 +203,8 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
                     to,
                     amount,
                     authority,
-                    mint_key,
-                    program_id,
+                    resource_authority_data,
+                    is_resource,
                     token_program,
                 )?;
                 Ok(())
@@ -239,8 +239,8 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
             u64,
         ),
         authority: &Signer<'info>,
-        mint_key: String,
-        program_id: &Pubkey,
+        resource_authority_data: (&Account<'info, ResourceAuthority>, u8),
+        is_resource: bool,
         token_program: &Program<'info, Token>,
     ) -> Result<()> {
         // (From, To)
@@ -266,8 +266,8 @@ impl<'info> MarketPoolAccount<'info> for Account<'info, MarketPool> {
                 pool_pay,
                 pay_amount,
                 authority,
-                mint_key,
-                program_id,
+                resource_authority_data,
+                is_resource,
                 token_program,
             )?;
             process_transfer_from_pool(
@@ -289,23 +289,20 @@ fn process_transfer_to_pool<'info>(
     to: &Account<'info, TokenAccount>,
     amount: u64,
     authority: &Signer<'info>,
-    mint_key: String,
-    program_id: &Pubkey,
+    (resource_authority, resource_authority_bump): (&Account<'info, ResourceAuthority>, u8),
+    is_resource: bool,
     token_program: &Program<'info, Token>,
 ) -> Result<()> {
-    let pay_mint_seed = seeds::mintkey_to_seed(&mint_key).ok_or(MarketPoolError::AssetKey)?;
-    if pay_mint_seed != seeds::MINT_IGT {
-        let (_, bump) = Pubkey::find_program_address(&[pay_mint_seed], program_id);
-        let signer_seeds: &[&[&[u8]]] = &[&[pay_mint_seed, &[bump]]];
+    if is_resource {
         transfer(
             CpiContext::new_with_signer(
                 token_program.to_account_info(),
                 Transfer {
                     from: from.to_account_info(),
                     to: to.to_account_info(),
-                    authority: authority.to_account_info(),
+                    authority: resource_authority.to_account_info(),
                 },
-                signer_seeds,
+                &[&[seeds::RESOURCE_AUTHORITY, &[resource_authority_bump]]],
             ),
             amount,
         )

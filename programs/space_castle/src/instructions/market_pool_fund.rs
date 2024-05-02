@@ -1,12 +1,15 @@
+use crate::{market_pool::*, resource::ResourceAuthority, seeds};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Token, TokenAccount},
 };
 
-use crate::market_pool::*;
-
-pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64, mint_key: String) -> Result<()> {
+pub fn market_pool_fund(
+    ctx: Context<MarketPoolFund>,
+    amount: u64,
+    pay_in_resource: bool,
+) -> Result<()> {
     let pool = &mut ctx.accounts.market_pool;
     // Deposit: (From, To, amount)
     let deposit = (
@@ -19,8 +22,11 @@ pub fn market_pool_fund(ctx: Context<MarketPoolFund>, amount: u64, mint_key: Str
     pool.fund(
         deposit,
         &ctx.accounts.payer,
-        mint_key,
-        &ctx.program_id,
+        (
+            &ctx.accounts.resource_authority,
+            ctx.bumps.resource_authority,
+        ),
+        pay_in_resource,
         &ctx.accounts.token_program,
     )
 }
@@ -36,6 +42,13 @@ pub struct MarketPoolFund<'info> {
     pub market_pool: Account<'info, MarketPool>,
     /// The mint account for the asset being deposited into the pool
     pub mint: Account<'info, token::Mint>,
+    /// RESOURCE AUTH
+    #[account(
+        mut,
+        seeds = [seeds::RESOURCE_AUTHORITY],
+        bump,
+    )]
+    pub resource_authority: Account<'info, ResourceAuthority>,
     /// The Liquidity Pool's token account for the asset being deposited into
     /// the pool
     #[account(

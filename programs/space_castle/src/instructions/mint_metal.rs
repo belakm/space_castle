@@ -8,7 +8,7 @@ use anchor_spl::{
     },
 };
 
-use crate::{mint::MintAuthority, seeds};
+use crate::{resource::ResourceAuthority, seeds};
 
 pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[ctx.bumps.mint]]];
@@ -75,11 +75,11 @@ pub struct MintInitMetal<'info> {
     #[account(
         init,
         payer = payer,
-        seeds = [seeds::MINT_METAL_AUTH],
+        seeds = [seeds::RESOURCE_AUTHORITY],
         bump,
-        space = 8 + MintAuthority::INIT_SPACE
+        space = 8 + ResourceAuthority::INIT_SPACE
     )]
-    pub mint_authority: Account<'info, MintAuthority>,
+    pub resource_authority: Account<'info, ResourceAuthority>,
     /// CHECK: Validate with constraint, also checked by metadata program
     #[account(
         mut,
@@ -97,10 +97,10 @@ pub struct MintMetal<'info> {
     pub payer: Signer<'info>,
     #[account(
         mut,
-        seeds = [seeds::MINT_METAL_AUTH],
+        seeds = [seeds::RESOURCE_AUTHORITY],
         bump
     )]
-    pub mint_authority: Account<'info, MintAuthority>,
+    pub resource_authority: Account<'info, ResourceAuthority>,
     #[account(
         mut,
         seeds = [seeds::MINT_METAL],
@@ -113,7 +113,7 @@ pub struct MintMetal<'info> {
         seeds = [seeds::ACCOUNT_METAL, payer.key().as_ref()],
         bump,
         token::mint = mint, 
-        token::authority = mint_authority 
+        token::authority = resource_authority 
     )]
     pub token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
