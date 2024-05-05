@@ -1,3 +1,4 @@
+mod building;
 mod error;
 pub mod instructions;
 mod market_pool;
@@ -84,8 +85,8 @@ mod space_castle {
         instructions::mint_init_chemical(ctx)
     }
     /// Mint Chemicals to X Account
-    pub fn mint_chemicals(ctx: Context<MintChemicals>, amount: u64) -> Result<()> {
-        instructions::mint_chemicals(ctx, amount)
+    pub fn mint_chemicals(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
+        instructions::mint_chemical(ctx, amount)
     }
 
     /// Chemicals

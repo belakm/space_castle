@@ -42,21 +42,41 @@ pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
     Ok(())
 }
 
-pub fn mint_chemicals(ctx: Context<MintChemicals>, amount: u64) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[ctx.bumps.mint]]];
+pub fn mint_chemical(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
+    process_mint_chemical(
+    &ctx.accounts.token_program,
+    (
+        &ctx.accounts.token_account,
+        (&ctx.accounts.mint, ctx.bumps.mint),
+        &ctx.accounts.mint
+    ),
+    amount,
+    ctx.accounts.mint.decimals)
+}
+
+pub fn process_mint_chemical<'info>(
+    token_program: &Program<'info, Token>,
+    (
+        to,
+        (mint, mint_bump),
+        authority 
+    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+    amount: u64,
+    decimals: u8 
+) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[mint_bump]]];
     token::mint_to(
         CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            token_program.to_account_info(),
             MintTo {
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.token_account.to_account_info(),
-                authority: ctx.accounts.mint.to_account_info(),
+                to: to.to_account_info(),
+                mint: mint.to_account_info(),
+                authority: authority.to_account_info(),
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(ctx.accounts.mint.decimals as u32),
-    )?;
-    Ok(())
+        amount * 10u64.pow(decimals as u32),
+    )
 }
 
 #[derive(Accounts)]
@@ -68,7 +88,7 @@ pub struct MintInitChemical<'info> {
         payer = payer, 
         seeds = [seeds::MINT_CHEMICAL], 
         bump, 
-        mint::decimals = 6,
+        mint::decimals = 8,
         mint::authority = mint,
     )]
     pub mint: Account<'info, Mint>,
@@ -92,7 +112,7 @@ pub struct MintInitChemical<'info> {
 }
 
 #[derive(Accounts)]
-pub struct MintChemicals<'info> {
+pub struct MintChemical<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(

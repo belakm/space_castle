@@ -1,13 +1,15 @@
 import { Account as TokenAccount, getMint } from '@solana/spl-token'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { fromBigIntQuantity } from './token'
 import { calculateBalances } from './swap'
 import { MARKET_RESOURCES } from './resources'
+import { getPlayerHoldings } from './player'
+import { AnchorProvider } from '@coral-xyz/anchor'
 
 /**
  * Log a line break
  */
-function lineBreak() {
+export function lineBreak() {
   console.log('----------------------------------------------------')
 }
 
@@ -196,6 +198,27 @@ export async function logPool(
     )
   }
   logK(k)
+  lineBreak()
+}
+
+export async function logPlayerHoldings(
+  playerWallet: Keypair,
+  programId: PublicKey,
+  provider: AnchorProvider,
+  mintKey?: string,
+) {
+  const holdings = await getPlayerHoldings(playerWallet, programId, provider)
+  const format = ''
+  lineBreak()
+  for (const resource of MARKET_RESOURCES) {
+    if (mintKey && mintKey !== resource.mintKey) {
+      continue
+    }
+    const holding = holdings[resource.mintKey]
+    format.concat(`| ${holding} ${resource.symbol}`)
+  }
+  format.substring(2)
+  console.log(format)
   lineBreak()
 }
 

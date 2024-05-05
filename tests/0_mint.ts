@@ -1,12 +1,11 @@
 import * as anchor from '@coral-xyz/anchor'
-import { getAssociatedTokenAddressSync } from '@solana/spl-token'
-import { PublicKey } from '@solana/web3.js'
+import { Keypair, PublicKey } from '@solana/web3.js'
 import { SpaceCastle } from '../target/types/space_castle'
+import { clearPlayers, usePlayer } from './utils/player'
 
 describe('[Unit]: Mints', () => {
   const provider = anchor.AnchorProvider.env()
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
-  const payer = (provider.wallet as anchor.Wallet).payer
   anchor.setProvider(provider)
 
   // Metadata program id
@@ -54,20 +53,20 @@ describe('[Unit]: Mints', () => {
     METADATA_PROGRAM_ID,
   )
 
-  // Associated token account address
-  const associatedTokenAccount = getAssociatedTokenAddressSync(
-    mintIGT,
-    payer.publicKey,
-  )
+  let playerWallet: Keypair
+  before('Get player wallet', async () => {
+    clearPlayers()
+    playerWallet = await usePlayer(1)
+  })
 
   it('Creates IGT Mint and metadata', async () => {
     await program.methods
       .mintInitIgt()
       .accounts({
         metadata: metadataIGTAccountAddress,
-        payer: payer.publicKey,
+        payer: playerWallet.publicKey,
       })
-      .signers([payer])
+      .signers([playerWallet])
       .rpc()
   })
   it('Creates Metal Mint and metadata + Metal authority', async () => {
@@ -75,9 +74,9 @@ describe('[Unit]: Mints', () => {
       .mintInitMetal()
       .accounts({
         metadata: metadataMetalAccountAddress,
-        payer: payer.publicKey,
+        payer: playerWallet.publicKey,
       })
-      .signers([payer])
+      .signers([playerWallet])
       .rpc()
   })
   it('Creates Chemical Mint and metadata + Chemical authority', async () => {
@@ -85,39 +84,9 @@ describe('[Unit]: Mints', () => {
       .mintInitChemical()
       .accounts({
         metadata: metadataChemicalAccountAddress,
-        payer: payer.publicKey,
+        payer: playerWallet.publicKey,
       })
-      .signers([payer])
+      .signers([playerWallet])
       .rpc()
-  })
-  it('Mint some IGT to a player', async () => {
-    await program.methods
-      .mintIgt(new anchor.BN(1000))
-      .accounts({
-        tokenAccount: associatedTokenAccount,
-        payer: payer.publicKey,
-      })
-      .signers([payer])
-      .rpc()
-    const balance = await provider.connection.getTokenAccountBalance(
-      associatedTokenAccount,
-    )
-    console.log(`\n\tPlayer balance: ${balance.value.uiAmount} IGT`)
-  })
-  it('Mint some metal to a player', async () => {
-    const [signer_pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('account_metal'), payer.publicKey.toBuffer()],
-      program.programId,
-    )
-    // const ata = getAssociatedTokenAddressSync(mintMetal, signer_pda, true)
-    await program.methods
-      .mintMetal(new anchor.BN(1000))
-      .accounts({
-        payer: payer.publicKey,
-      })
-      .signers([payer])
-      .rpc()
-    const balance = await provider.connection.getTokenAccountBalance(signer_pda)
-    console.log(`\n\tPlayer balance: ${balance.value.uiAmount} rMET`)
   })
 })

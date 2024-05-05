@@ -68,7 +68,7 @@ pub struct MintInitIGT<'info> {
         payer = payer, 
         seeds = [seeds::MINT_IGT], 
         bump, 
-        mint::decimals = 9,
+        mint::decimals = 8,
         mint::authority = mint,
     )]
     pub mint: Account<'info, Mint>,

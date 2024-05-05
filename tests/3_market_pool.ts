@@ -4,7 +4,6 @@ import { PublicKey, Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
 import { MARKET_RESOURCES } from './utils/resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
-import { createAndFundWallet } from './utils/wallet'
 import { mintAllResourcesToAddress } from './utils/token'
 import {
   calculateChangeInK,
@@ -13,6 +12,7 @@ import {
   fetchPoolTokenAccounts,
 } from './utils/swap'
 import { logChangeInK, logPool } from './utils/log'
+import { usePlayer } from './utils/player'
 
 describe('[Unit] Market pool', () => {
   const provider = anchor.AnchorProvider.env()
@@ -68,7 +68,7 @@ describe('[Unit] Market pool', () => {
   before(
     'Prepare wallets and fund mock player wallet with resources',
     async () => {
-      playerWallet = await createAndFundWallet()
+      playerWallet = await usePlayer(1)
       mintAllResourcesToAddress(playerWallet)
     },
   )

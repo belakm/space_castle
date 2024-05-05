@@ -13,22 +13,24 @@ export const MARKET_RESOURCES: Array<MarketResourceMetadata> = [
   {
     name: 'Intergalactic Tender',
     symbol: 'IGT',
-    decimals: 9,
+    decimals: 8,
     quantity: 10000000,
     mintKey: 'igt',
   },
   {
     name: 'Metals',
     symbol: 'rMET',
-    decimals: 2,
+    decimals: 8,
     quantity: 10000,
     mintKey: 'metal',
   },
   {
     name: 'Chemicals',
     symbol: 'rCHEM',
-    decimals: 6,
+    decimals: 8,
     quantity: 10000,
     mintKey: 'chemical',
   },
 ]
+
+export type ResourceKey = 'igt' | 'metal' | 'chemical' | 'fuel'

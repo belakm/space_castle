@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    token::{self, Mint, MintTo, Token, TokenAccount}, 
     metadata::{
         create_metadata_accounts_v3,
         mpl_token_metadata::types::DataV2,
         CreateMetadataAccountsV3, Metadata,
-    },
+    }, token::{self, Mint, MintTo, Token, TokenAccount},
 };
 
 use crate::{resource::ResourceAuthority, seeds};
@@ -43,20 +42,41 @@ pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
 }
 
 pub fn mint_metal(ctx: Context<MintMetal>, amount: u64) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[ctx.bumps.mint]]];
+    process_mint_metal(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.token_account,
+            (&ctx.accounts.mint, ctx.bumps.mint),
+            &ctx.accounts.mint
+        ),
+        amount,
+        ctx.accounts.mint.decimals
+    )
+}
+
+pub fn process_mint_metal<'info>(
+    token_program: &Program<'info, Token>,
+    (
+        to,
+        (mint, mint_bump),
+        authority 
+    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+    amount: u64,
+    decimals: u8 
+) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[mint_bump]]];
     token::mint_to(
         CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            token_program.to_account_info(),
             MintTo {
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.token_account.to_account_info(),
-                authority: ctx.accounts.mint.to_account_info(),
+                to: to.to_account_info(),
+                mint: mint.to_account_info(),
+                authority: authority.to_account_info(),
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(ctx.accounts.mint.decimals as u32),
-    )?;
-    Ok(())
+        amount * 10u64.pow(decimals as u32),
+    )
 }
 
 #[derive(Accounts)]
@@ -68,7 +88,7 @@ pub struct MintInitMetal<'info> {
         payer = payer, 
         seeds = [seeds::MINT_METAL], 
         bump, 
-        mint::decimals = 2,
+        mint::decimals = 8,
         mint::authority = mint,
     )]
     pub mint: Account<'info, Mint>,

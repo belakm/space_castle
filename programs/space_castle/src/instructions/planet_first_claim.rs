@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
+use anchor_spl::{token::{Token, TokenAccount, Mint, MintTo}};
 use solana_program::clock::Clock;
-use crate::{ship::*, planet::*, player::*, seeds};
+use crate::{building::generate_initial_buildings_for_planet, planet::*, player::*, process_mint_chemical, process_mint_metal, resource::ResourceAuthority, seeds, ship::*};
 
 pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Result<()> {
     // CHECK IF PLANET ACTUALLY EXISTS
@@ -10,10 +11,11 @@ pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Res
 
     // CREATE PLANET METADATA
     let planet_info = &mut ctx.accounts.planet_info;
-    if planet_info.is_settled {
+    if planet_info.owner.is_some() {
         return Err(PlanetErrorCode::PlanetAlreadySettled.into());
     }
-    planet_info.is_settled = true;
+    planet_info.owner = Some(*ctx.accounts.signer.key);
+    planet_info.miner = None;
 
     // CREATE PLAYERS HOLDING
     let planet_holding = &mut ctx.accounts.planet_holding;
@@ -26,7 +28,33 @@ pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Res
     }
     player_info.settled_planets = 1;
 
-    // CREATE INITIAL SHIP
+    // Create initial buildings
+    ctx.accounts.planet_holding.buildings = generate_initial_buildings_for_planet(x, y);
+
+    // Give some initial resources
+    process_mint_metal(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.metal_token_account,
+            (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
+            &ctx.accounts.mint_metal
+        ),
+        10,
+        ctx.accounts.mint_metal.decimals
+    )?;
+    process_mint_chemical(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.chemical_token_account,
+            (&ctx.accounts.mint_chemical, ctx.bumps.mint_chemical),
+            &ctx.accounts.mint_chemical
+        ),
+        10,
+        ctx.accounts.mint_chemical.decimals
+    )?;
+ 
+
+    // Create one initial ship for the player 
     let initial_ship = &mut ctx.accounts.initial_ship;
     initial_ship.convert_to_starting_ship();
 
@@ -63,8 +91,7 @@ pub struct PlanetFirstClaim<'info> {
         space = 8 + PlanetHolding::INIT_SPACE 
     )]
     pub planet_holding: Account<'info, PlanetHolding>,
-    pub system_program: Program<'info, System>,
-        #[account(
+    #[account(
         init,
         payer = signer,
         seeds = [seeds::SHIP, signer.key().as_ref(), b"1"], 
@@ -73,5 +100,44 @@ pub struct PlanetFirstClaim<'info> {
     )]
     pub initial_ship: Account<'info, Ship>,
     #[account(mut)]
-    pub player_info: Account<'info, Player>
+    pub player_info: Account<'info, Player>,
+    #[account(
+        mut,
+        seeds = [seeds::RESOURCE_AUTHORITY],
+        bump
+    )]
+    pub resource_authority: Account<'info, ResourceAuthority>,
+    #[account(
+        mut,
+        seeds = [seeds::MINT_METAL],
+        bump,
+    )]
+    pub mint_metal: Account<'info, Mint>,
+    #[account(
+        init_if_needed,
+        payer = signer,
+        seeds = [seeds::ACCOUNT_METAL, signer.key().as_ref()],
+        bump,
+        token::mint = mint_metal, 
+        token::authority = resource_authority 
+    )]
+    pub metal_token_account: Account<'info, TokenAccount>,
+        #[account(
+        mut,
+        seeds = [seeds::MINT_CHEMICAL],
+        bump,
+    )]
+    pub mint_chemical: Account<'info, Mint>,
+    #[account(
+        init_if_needed,
+        payer = signer,
+        seeds = [seeds::ACCOUNT_CHEMICAL, signer.key().as_ref()],
+        bump,
+        token::mint = mint_chemical, 
+        token::authority = resource_authority 
+    )]
+    pub chemical_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+
 }
