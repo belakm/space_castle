@@ -3,7 +3,7 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { fromBigIntQuantity } from './token'
 import { calculateBalances } from './swap'
 import { MARKET_RESOURCES } from './resources'
-import { getPlayerHoldings } from './player'
+import { getPlayerBalances, resourceKeys } from './player'
 import { AnchorProvider } from '@coral-xyz/anchor'
 
 /**
@@ -201,24 +201,28 @@ export async function logPool(
   lineBreak()
 }
 
-export async function logPlayerHoldings(
+export async function logPlayerBalances(
   playerWallet: Keypair,
   programId: PublicKey,
   provider: AnchorProvider,
   mintKey?: string,
 ) {
-  const holdings = await getPlayerHoldings(playerWallet, programId, provider)
+  const holdings = await getPlayerBalances(
+    playerWallet,
+    programId,
+    provider,
+    mintKey,
+  )
   const format = ''
   lineBreak()
-  for (const resource of MARKET_RESOURCES) {
-    if (mintKey && mintKey !== resource.mintKey) {
+  for (const r of resourceKeys) {
+    if (mintKey && mintKey !== r) {
       continue
     }
-    const holding = holdings[resource.mintKey]
-    format.concat(`| ${holding} ${resource.symbol}`)
+    const holding = holdings[r]
+    format.concat(`| ${holding} ${r}`)
   }
-  format.substring(2)
-  console.log(format)
+  console.log(format.substring(2))
   lineBreak()
 }
 

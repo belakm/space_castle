@@ -28,7 +28,7 @@ pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Res
         )
         .with_signer(signer_seeds),
         // mint 10 IGT to new players
-        10 * 10u64.pow(ctx.accounts.mint.decimals as u32),
+        100 * 10u64.pow(ctx.accounts.mint.decimals as u32),
     )?;
 
     Ok(())
@@ -47,7 +47,7 @@ pub struct PlayerRegister<'info> {
         space = 8 + Player::INIT_SPACE 
     )]
     pub player: Account<'info, Player>,
-        #[account(
+    #[account(
         mut,
         seeds = [seeds::MINT_IGT],
         bump

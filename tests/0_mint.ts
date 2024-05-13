@@ -2,6 +2,7 @@ import * as anchor from '@coral-xyz/anchor'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import { SpaceCastle } from '../target/types/space_castle'
 import { clearPlayers, usePlayer } from './utils/player'
+import { assert } from 'chai'
 
 describe('[Unit]: Mints', () => {
   const provider = anchor.AnchorProvider.env()
@@ -39,6 +40,19 @@ describe('[Unit]: Mints', () => {
     ],
     METADATA_PROGRAM_ID,
   )
+  // CRYSTAL
+  const [mintCrystal] = PublicKey.findProgramAddressSync(
+    [Buffer.from('mint_crystal')],
+    program.programId,
+  )
+  const [metadataCrystalAccountAddress] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('metadata'),
+      METADATA_PROGRAM_ID.toBuffer(),
+      mintCrystal.toBuffer(),
+    ],
+    METADATA_PROGRAM_ID,
+  )
   // CHEMICAL
   const [mintChemical] = PublicKey.findProgramAddressSync(
     [Buffer.from('mint_chemical')],
@@ -49,6 +63,19 @@ describe('[Unit]: Mints', () => {
       Buffer.from('metadata'),
       METADATA_PROGRAM_ID.toBuffer(),
       mintChemical.toBuffer(),
+    ],
+    METADATA_PROGRAM_ID,
+  )
+  // FUEL
+  const [mintFuel] = PublicKey.findProgramAddressSync(
+    [Buffer.from('mint_fuel')],
+    program.programId,
+  )
+  const [metadataFuelAccountAddress] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('metadata'),
+      METADATA_PROGRAM_ID.toBuffer(),
+      mintFuel.toBuffer(),
     ],
     METADATA_PROGRAM_ID,
   )
@@ -68,8 +95,11 @@ describe('[Unit]: Mints', () => {
       })
       .signers([playerWallet])
       .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
   })
-  it('Creates Metal Mint and metadata + Metal authority', async () => {
+  it('Creates Metal Mint and metadata', async () => {
     await program.methods
       .mintInitMetal()
       .accounts({
@@ -78,8 +108,24 @@ describe('[Unit]: Mints', () => {
       })
       .signers([playerWallet])
       .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
   })
-  it('Creates Chemical Mint and metadata + Chemical authority', async () => {
+  it('Creates Crystal Mint and metadata', async () => {
+    await program.methods
+      .mintInitCrystal()
+      .accounts({
+        metadata: metadataCrystalAccountAddress,
+        payer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
+  })
+  it('Creates Chemical Mint and metadata', async () => {
     await program.methods
       .mintInitChemical()
       .accounts({
@@ -88,5 +134,21 @@ describe('[Unit]: Mints', () => {
       })
       .signers([playerWallet])
       .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
+  })
+  it('Creates Fuel Mint and metadata', async () => {
+    await program.methods
+      .mintInitFuel()
+      .accounts({
+        metadata: metadataFuelAccountAddress,
+        payer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
   })
 })

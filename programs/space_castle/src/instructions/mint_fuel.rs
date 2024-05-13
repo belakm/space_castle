@@ -7,11 +7,10 @@ use anchor_spl::{
         CreateMetadataAccountsV3, Metadata,
     },
 };
-
 use crate::{resource::ResourceAuthority, seeds};
 
-pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[ctx.bumps.mint]]];
+pub fn mint_init_fuel(ctx: Context<MintInitFuel>) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[ctx.bumps.mint]]];
     create_metadata_accounts_v3(
         CpiContext::new(
             ctx.accounts.token_metadata_program.to_account_info(),
@@ -27,8 +26,8 @@ pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
         )
         .with_signer(signer_seeds),
         DataV2 {
-            name: "Chemicals".to_string(),
-            symbol: "rCHEM".to_string(),
+            name: "Fuel".to_string(),
+            symbol: "rFUEL".to_string(),
             uri: "https://not-really.com".to_string(),
             seller_fee_basis_points: 0,
             creators: None,
@@ -42,8 +41,8 @@ pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
     Ok(())
 }
 
-pub fn mint_chemical(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
-    process_mint_chemical(
+pub fn mint_fuel(ctx: Context<MintFuel>, amount: u64) -> Result<()> {
+    process_mint_fuel(
     &ctx.accounts.token_program,
     (
         &ctx.accounts.token_account,
@@ -54,7 +53,7 @@ pub fn mint_chemical(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
     ctx.accounts.mint.decimals)
 }
 
-pub fn process_mint_chemical<'info>(
+pub fn process_mint_fuel<'info>(
     token_program: &Program<'info, Token>,
     (
         to,
@@ -64,7 +63,7 @@ pub fn process_mint_chemical<'info>(
     amount: u64,
     decimals: u8 
 ) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[mint_bump]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[mint_bump]]];
     token::mint_to(
         CpiContext::new(
             token_program.to_account_info(),
@@ -79,7 +78,7 @@ pub fn process_mint_chemical<'info>(
     )
 }
 
-pub fn process_burn_chemical<'info>(
+pub fn process_burn_fuel<'info>(
     token_program: &Program<'info, Token>,
     (
         from,
@@ -88,7 +87,7 @@ pub fn process_burn_chemical<'info>(
     ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
     amount: u64
 ) -> Result<()>{
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[mint_bump]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[mint_bump]]];
     let cpi_accounts = Burn {
         mint: mint.to_account_info(),
         from: from.to_account_info(),
@@ -100,13 +99,13 @@ pub fn process_burn_chemical<'info>(
 }
 
 #[derive(Accounts)]
-pub struct MintInitChemical<'info> {
+pub struct MintInitFuel<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(
         init, 
         payer = payer, 
-        seeds = [seeds::MINT_CHEMICAL], 
+        seeds = [seeds::MINT_FUEL], 
         bump, 
         mint::decimals = 8,
         mint::authority = mint,
@@ -132,7 +131,7 @@ pub struct MintInitChemical<'info> {
 }
 
 #[derive(Accounts)]
-pub struct MintChemical<'info> {
+pub struct MintFuel<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(
@@ -143,14 +142,14 @@ pub struct MintChemical<'info> {
     pub resource_authority: Account<'info, ResourceAuthority>,
     #[account(
         mut,
-        seeds = [seeds::MINT_CHEMICAL],
+        seeds = [seeds::MINT_FUEL],
         bump
     )]
     pub mint: Account<'info, Mint>,
     #[account(
         init_if_needed,
         payer = payer,
-        seeds = [seeds::ACCOUNT_CHEMICAL, payer.key().as_ref()],
+        seeds = [seeds::ACCOUNT_FUEL, payer.key().as_ref()],
         bump,
         token::mint = mint, 
         token::authority = resource_authority 
@@ -159,4 +158,3 @@ pub struct MintChemical<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
-

@@ -12,4 +12,6 @@ pub struct Player {
 pub enum PlayerErrorCode {
     #[msg("Player name is too long. Limit is 32 characters.")]
     NameTooLong,
+    #[msg("Already picked up starting supplies")]
+    StartingSupplies,
 }

@@ -6,20 +6,20 @@ export interface MarketResourceMetadata {
   symbol: string
   decimals: number
   quantity: number
-  mintKey: string
+  mintKey: ResourceKey
 }
 
 export const MARKET_RESOURCES: Array<MarketResourceMetadata> = [
   {
     name: 'Intergalactic Tender',
-    symbol: 'IGT',
+    symbol: 'iGT',
     decimals: 8,
     quantity: 10000000,
     mintKey: 'igt',
   },
   {
     name: 'Metals',
-    symbol: 'rMET',
+    symbol: 'rMETL',
     decimals: 8,
     quantity: 10000,
     mintKey: 'metal',
@@ -31,6 +31,20 @@ export const MARKET_RESOURCES: Array<MarketResourceMetadata> = [
     quantity: 10000,
     mintKey: 'chemical',
   },
+  {
+    name: 'Fuel',
+    symbol: 'rFUEL',
+    decimals: 8,
+    quantity: 10000,
+    mintKey: 'fuel',
+  },
+  {
+    name: 'Crystals',
+    symbol: 'rCRYS',
+    decimals: 8,
+    quantity: 10000,
+    mintKey: 'crystal',
+  },
 ]
 
-export type ResourceKey = 'igt' | 'metal' | 'chemical' | 'fuel'
+export type ResourceKey = 'igt' | 'metal' | 'chemical' | 'crystal' | 'fuel'

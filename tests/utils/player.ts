@@ -6,7 +6,7 @@ import {
   PublicKey,
 } from '@solana/web3.js'
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs'
-import { MARKET_RESOURCES, ResourceKey } from './resources'
+import { ResourceKey } from './resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 
 const path = 'tests/.wallets'
@@ -45,6 +45,7 @@ export async function usePlayer(index: number): Promise<Keypair> {
   } else {
     keypair = parseWallet(index)
   }
+  console.log(`Using player ${index}: ${keypair.publicKey}`)
   return keypair
 }
 
@@ -81,23 +82,29 @@ async function getPlayerHolding(
   return balance.value.uiAmount || 0
 }
 
-export async function getPlayerHoldings(
+export type PlayerBalances = { [K in ResourceKey]?: number }
+export const resourceKeys = ['igt', 'metal', 'crystal', 'chemical', 'fuel']
+
+export async function getPlayerBalances(
   playerWallet: Keypair,
   programId: PublicKey,
   provider: anchor.AnchorProvider,
   mintKey?: string,
 ) {
-  const balances: { [K in ResourceKey]?: number } = {}
-  for (const r of MARKET_RESOURCES) {
-    if (mintKey && mintKey !== r.mintKey) {
+  const balances: PlayerBalances = {}
+  for (const r of resourceKeys) {
+    if (mintKey && mintKey !== r) {
       continue
     }
-    balances[r.mintKey] = await getPlayerHolding(
-      r.mintKey,
-      playerWallet,
-      programId,
-      provider,
-    )
+    balances[r] = await getPlayerHolding(r, playerWallet, programId, provider)
   }
   return balances
+}
+
+export function balanceDiff(a: PlayerBalances, b: PlayerBalances) {
+  const diff = {} as PlayerBalances
+  for (const r of resourceKeys) {
+    diff[r] = (a[r] || 0) - (b[r] || 0)
+  }
+  return diff
 }

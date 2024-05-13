@@ -63,9 +63,9 @@ pub fn get_planet_resources(x: u16, y: u16) -> [u16; 4] {
 
 #[error_code]
 pub enum PlanetErrorCode {
-    #[msg("Planet is already settled and cannot be claimed.")]
+    #[msg("Planet is already settled and cannot be claimed")]
     PlanetAlreadySettled,
-    #[msg("Player already claimed their first planet.")]
+    #[msg("Player already claimed their first planet")]
     MaxOneFirstPlanet,
     #[msg("Invalid planet coordinates")]
     NoPlanetAtCoordinates,

@@ -1,6 +1,13 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
+pub enum GenericError {
+    /// Generic error for  
+    #[msg("Wrong mint key")]
+    WrongMintKey,
+}
+
+#[error_code]
 pub enum MarketPoolError {
     /// Some arithmetic operation has caused the resulting number to be too
     /// large for a `u64` value, thus overflowing it

@@ -34,9 +34,10 @@ export async function mintAllResourcesToAddress(signer: Signer) {
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
 
   const methods = {
-    igt: program.methods.mintIgt,
     metal: program.methods.mintMetal,
-    chemical: program.methods.mintChemicals,
+    crystal: program.methods.mintCrystal,
+    chemical: program.methods.mintChemical,
+    fuel: program.methods.mintFuel,
   }
 
   console.log('\n\tMinting for address: ', signer.publicKey.toString())

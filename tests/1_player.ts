@@ -3,8 +3,8 @@ import { type Program } from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import { assert } from 'chai'
-import { getPlayerHoldings, usePlayer } from './utils/player'
-import { logPlayerHoldings } from './utils/log'
+import { getPlayerBalances, usePlayer } from './utils/player'
+import { logPlayerBalances } from './utils/log'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 
 describe('[Unit]: Player', () => {
@@ -40,21 +40,35 @@ describe('[Unit]: Player', () => {
   })
 
   it('New player has been given a token amount of IGT', async () => {
-    const holdings = await getPlayerHoldings(
+    const holdings = await getPlayerBalances(
       playerWallet,
       program.programId,
       provider,
       'igt',
     )
-
-    console.log(holdings)
-
     if (holdings.igt && holdings.igt > 0) {
-      await logPlayerHoldings(playerWallet, program.programId, provider, 'igt')
-      assert.ok('Player got its IGT')
+      await logPlayerBalances(playerWallet, program.programId, provider, 'igt')
+      return assert.ok('Player got its IGT')
     } else {
-      assert.fail("Player wasn't credited")
+      return assert.fail("Player wasn't credited")
     }
+  })
+
+  it('Activate resource accounts for player 1', async () => {
+    await program.methods
+      .playerCreateResourceAccountsPart1()
+      .accounts({
+        signer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountsPart2()
+      .accounts({
+        signer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
   })
 
   it("Player can't have a name too long", async () => {
@@ -87,6 +101,20 @@ describe('[Unit]: Player', () => {
       .accounts({
         signer: secondPlayerWallet.publicKey,
         tokenAccount,
+      })
+      .signers([secondPlayerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountsPart1()
+      .accounts({
+        signer: secondPlayerWallet.publicKey,
+      })
+      .signers([secondPlayerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountsPart2()
+      .accounts({
+        signer: secondPlayerWallet.publicKey,
       })
       .signers([secondPlayerWallet])
       .rpc()

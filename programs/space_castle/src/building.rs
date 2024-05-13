@@ -1,6 +1,10 @@
 use anchor_lang::prelude::*;
 
-use crate::planet::get_planet_resources;
+use crate::{
+    mint_decimals,
+    planet::get_planet_resources,
+    utilities::{calculate_upgrade_cost, convert_from_float, convert_to_float},
+};
 
 #[account]
 #[derive(InitSpace, Copy)]
@@ -10,6 +14,8 @@ pub struct Building {
 }
 
 impl Building {
+    const UPGRADE_FACTOR: f32 = 1.1;
+
     pub fn default() -> Self {
         Building {
             level: 0,
@@ -45,9 +51,62 @@ impl Building {
             building_type,
         }
     }
+
+    /// Base upgrade cost for this building
+    ///
+    /// # Returns
+    ///
+    /// * [`metal`, `crystal`, `chemical`, `fuel`]
+    ///
+    pub fn base_upgrade_cost(&self) -> [f32; 4] {
+        match self.building_type {
+            // General buildings
+            BuildingType::Shipyard => [100.0, 100.0, 100.0, 100.0],
+            BuildingType::AstralNavyHQ => [50.0, 50.0, 50.0, 150.0],
+            BuildingType::TradeBeacon => [250.0, 250.0, 250.0, 250.0],
+            BuildingType::Infrastructure => [20.0, 20.0, 20.0, 50.0],
+            BuildingType::PlanetaryCapital => [20.0, 20.0, 20.0, 100.0],
+            // Resource buildings
+            BuildingType::MetalIndustry => [10.0, 5.0, 5.0, 10.0],
+            BuildingType::CrystalLabs => [5.0, 10.0, 5.0, 10.0],
+            BuildingType::ChemicalRefinery => [5.0, 5.0, 10.0, 10.0],
+            BuildingType::FuelExtractors => [50.0, 50.0, 50.0, 150.0],
+            // Should never happen
+            BuildingType::None => [0.0, 0.0, 0.0, 0.0],
+        }
+    }
+
+    /// Calculates the upgrade cost for this building
+    ///
+    /// # Returns
+    ///
+    /// A tuple where its params are quantities of resources each u16:
+    /// * [`metal`, `crystal`, `chemical`, `fuel`]
+    ///
+    pub fn calculate_upgrade_cost(&self) -> BuildingCost {
+        let [metal, crystal, chemical, fuel] = self.base_upgrade_cost();
+        BuildingCost {
+            metal: convert_from_float(
+                calculate_upgrade_cost(metal, Building::UPGRADE_FACTOR, self.level),
+                mint_decimals::METAL,
+            ),
+            crystal: convert_from_float(
+                calculate_upgrade_cost(crystal, Building::UPGRADE_FACTOR, self.level),
+                mint_decimals::CRYSTAL,
+            ),
+            chemical: convert_from_float(
+                calculate_upgrade_cost(chemical, Building::UPGRADE_FACTOR, self.level),
+                mint_decimals::CHEMICAL,
+            ),
+            fuel: convert_from_float(
+                calculate_upgrade_cost(fuel, Building::UPGRADE_FACTOR, self.level),
+                mint_decimals::FUEL,
+            ),
+        }
+    }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, PartialEq)]
 pub enum BuildingType {
     None,
     PlanetaryCapital,
@@ -59,6 +118,13 @@ pub enum BuildingType {
     TradeBeacon,
     AstralNavyHQ,
     Infrastructure,
+}
+
+pub struct BuildingCost {
+    pub metal: u64,
+    pub crystal: u64,
+    pub chemical: u64,
+    pub fuel: u64,
 }
 
 pub fn generate_initial_buildings_for_planet(x: u16, y: u16) -> [Building; 6] {

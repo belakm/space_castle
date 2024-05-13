@@ -4,13 +4,17 @@ use anchor_spl::{
         create_metadata_accounts_v3,
         mpl_token_metadata::types::DataV2,
         CreateMetadataAccountsV3, Metadata,
-    }, token::{self, Mint, MintTo, Token, TokenAccount},
+    }, 
+    token::{self, Burn, Mint, MintTo, Token, TokenAccount},
 };
 
 use crate::{resource::ResourceAuthority, seeds};
 
 pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[ctx.bumps.mint]]];
+    let ra = &mut ctx.accounts.resource_authority;
+    ra.metal_mint_bump = ctx.bumps.mint;
+
     create_metadata_accounts_v3(
         CpiContext::new(
             ctx.accounts.token_metadata_program.to_account_info(),
@@ -27,7 +31,7 @@ pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
         .with_signer(signer_seeds),
         DataV2 {
             name: "Metal".to_string(),
-            symbol: "rMET".to_string(),
+            symbol: "rMETL".to_string(),
             uri: "https://not-really.com".to_string(),
             seller_fee_basis_points: 0,
             creators: None,
@@ -77,6 +81,22 @@ pub fn process_mint_metal<'info>(
         .with_signer(signer_seeds),
         amount * 10u64.pow(decimals as u32),
     )
+}
+
+pub fn process_burn_metal<'info>(
+    token_program: &Program<'info, Token>,
+    (
+        from,
+        (mint, mint_bump),
+        authority 
+    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+    amount: u64
+) -> Result<()>{
+    token::burn(CpiContext::new_with_signer(token_program.to_account_info(), Burn {
+        mint: mint.to_account_info(),
+        from: from.to_account_info(),
+        authority: authority.to_account_info(),
+    }, &[&[seeds::MINT_METAL, &[mint_bump]]]), amount)
 }
 
 #[derive(Accounts)]

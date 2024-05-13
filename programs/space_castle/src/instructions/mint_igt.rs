@@ -29,7 +29,7 @@ pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
         .with_signer(signer_seeds),
         DataV2 {
             name: "Intergalactic Tender".to_string(),
-            symbol: "IGT".to_string(),
+            symbol: "iGT".to_string(),
             uri: "https://not-really.com".to_string(),
             seller_fee_basis_points: 0,
             creators: None,

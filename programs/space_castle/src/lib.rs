@@ -6,11 +6,21 @@ mod planet;
 mod player;
 mod resource;
 mod ship;
+mod utilities;
 
 use anchor_lang::prelude::*;
+use building::BuildingType;
 use instructions::*;
 
 declare_id!("9M2kfet4NAaJyz7Uavx4GAjUexqZrZ6ozoA3QGbkRZHK");
+
+pub mod mint_decimals {
+    pub const IGT: u8 = 8;
+    pub const METAL: u8 = 8;
+    pub const CRYSTAL: u8 = 8;
+    pub const CHEMICAL: u8 = 8;
+    pub const FUEL: u8 = 8;
+}
 
 pub mod seeds {
     pub const PLAYER: &[u8] = b"player";
@@ -45,20 +55,38 @@ pub mod seeds {
 mod space_castle {
     use super::*;
 
-    ///
     /// Player
     ///
     /// Player - Registers a player
     pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Result<()> {
         instructions::player_register(ctx, player_name)
     }
-
+    pub fn player_create_resource_accounts_part1(
+        ctx: Context<PlayerCreateResourceAccountsPart1>,
+    ) -> Result<()> {
+        instructions::player_create_resource_accounts_part1(ctx)
+    }
+    pub fn player_create_resource_accounts_part2(
+        ctx: Context<PlayerCreateResourceAccountsPart2>,
+    ) -> Result<()> {
+        instructions::player_create_resource_accounts_part2(ctx)
+    }
     ///
     /// Planet
     ///
     /// Planet - First planet claim for new users
     pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Result<()> {
         instructions::planet_first_claim(ctx, x, y)
+    }
+    pub fn planet_harvest(ctx: Context<PlanetHarvest>, x: u16, y: u16) -> Result<()> {
+        instructions::planet_harvest(ctx, x, y)
+    }
+    /// Planet - upgrades a building
+    pub fn planet_upgrade_building(
+        ctx: Context<PlanetUpgradeBuilding>,
+        building_type: BuildingType,
+    ) -> Result<()> {
+        instructions::planet_upgrade_building(ctx, building_type)
     }
 
     ///
@@ -85,13 +113,26 @@ mod space_castle {
         instructions::mint_init_chemical(ctx)
     }
     /// Mint Chemicals to X Account
-    pub fn mint_chemicals(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
+    pub fn mint_chemical(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
         instructions::mint_chemical(ctx, amount)
     }
+    /// Create Crystal Mint
+    pub fn mint_init_crystal(ctx: Context<MintInitCrystal>) -> Result<()> {
+        instructions::mint_init_crystal(ctx)
+    }
+    /// Mint Crystal to X Account
+    pub fn mint_crystal(ctx: Context<MintCrystal>, amount: u64) -> Result<()> {
+        instructions::mint_crystal(ctx, amount)
+    }
+    /// Create Fuel Mint
+    pub fn mint_init_fuel(ctx: Context<MintInitFuel>) -> Result<()> {
+        instructions::mint_init_fuel(ctx)
+    }
+    /// Mint Fuel to X Account
+    pub fn mint_fuel(ctx: Context<MintFuel>, amount: u64) -> Result<()> {
+        instructions::mint_fuel(ctx, amount)
+    }
 
-    /// Chemicals
-    /// Crystals
-    ///
     /// Market pool
     ///
     /// Market pool - Create the market liquidity pool

@@ -3,9 +3,8 @@ import { type Program } from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import { assert } from 'chai'
-import { getPlayerHoldings, usePlayer } from './utils/player'
-import { MARKET_RESOURCES } from './utils/resources'
-import { lineBreak, logPlayerHoldings } from './utils/log'
+import { getPlayerBalances, resourceKeys, usePlayer } from './utils/player'
+import { lineBreak, logPlayerBalances } from './utils/log'
 
 describe('[Unit]: Planet', () => {
   const provider = anchor.AnchorProvider.env()
@@ -20,42 +19,41 @@ describe('[Unit]: Planet', () => {
   })
 
   it('Player with no planets can claim the first planet', async () => {
-    const [playerInfo] = PublicKey.findProgramAddressSync(
-      [Buffer.from('player'), playerWallet.publicKey.toBuffer()],
-      program.programId,
-    )
-    const tx = await program.methods
+    await program.methods
       .planetFirstClaim(1, 3)
       .accounts({
         signer: playerWallet.publicKey,
-        playerInfo,
       })
       .signers([playerWallet])
       .rpc()
       .catch((e) => {
-        console.error(e)
+        return assert.fail(e)
+      })
+  })
+
+  it('Player is awarded a token amount of resources when harvesting for the first time', async () => {
+    await program.methods
+      .planetHarvest(1, 3)
+      .accounts({
+        signer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+      .catch((e) => {
         return assert.fail(e)
       })
 
-    console.log(tx)
-  })
-
-  it('Player is awarded a token amount of resources when claiming the first planet', async () => {
-    const holdings = await getPlayerHoldings(
+    const holdings = await getPlayerBalances(
       playerWallet,
       program.programId,
       provider,
     )
-    for (const r of MARKET_RESOURCES) {
-      if (
-        ['metal', 'chemical'].includes(r.mintKey) &&
-        holdings[r.mintKey] <= 0
-      ) {
+    for (const r of resourceKeys) {
+      if (r != 'igt' && holdings[r] <= 0) {
         return assert.fail('Missing resources after claim')
       }
     }
-    await logPlayerHoldings(playerWallet, program.programId, provider)
-    return assert.ok('Has resources')
+    await logPlayerBalances(playerWallet, program.programId, provider)
   })
 
   it('Planet has starting buildings', async () => {
@@ -96,15 +94,10 @@ describe('[Unit]: Planet', () => {
 
   it("Can't claim already claimed planet", async () => {
     try {
-      const [playerInfo] = PublicKey.findProgramAddressSync(
-        [Buffer.from('player'), secondPlayerWallet.publicKey.toBuffer()],
-        program.programId,
-      )
       await program.methods
         .planetFirstClaim(1, 3)
         .accounts({
           signer: secondPlayerWallet.publicKey,
-          playerInfo,
         })
         .signers([secondPlayerWallet])
         .rpc()
@@ -116,15 +109,10 @@ describe('[Unit]: Planet', () => {
 
   it("Can't claim a planet where there is no planet", async () => {
     try {
-      const [playerInfo] = PublicKey.findProgramAddressSync(
-        [Buffer.from('player'), secondPlayerWallet.publicKey.toBuffer()],
-        program.programId,
-      )
       await program.methods
         .planetFirstClaim(1, 4)
         .accounts({
           signer: secondPlayerWallet.publicKey,
-          playerInfo,
         })
         .signers([secondPlayerWallet])
         .rpc()
@@ -136,15 +124,10 @@ describe('[Unit]: Planet', () => {
 
   it("Can't claim another planet as first planet", async () => {
     try {
-      const [playerInfo] = PublicKey.findProgramAddressSync(
-        [Buffer.from('player'), playerWallet.publicKey.toBuffer()],
-        program.programId,
-      )
       await program.methods
         .planetFirstClaim(1, 3)
         .accounts({
           signer: playerWallet.publicKey,
-          playerInfo,
         })
         .signers([playerWallet])
         .rpc()
