@@ -16,31 +16,30 @@ describe('[Unit]: Buildings', () => {
   })
 
   it('Buildings can be upgraded, player pays with resources', async () => {
-    // const balances1 = await getPlayerBalances(
-    //   playerWallet,
-    //   program.programId,
-    //   provider,
-    // )
-    const planetaryCapital = {}
+    const balances1 = await getPlayerBalances(
+      playerWallet,
+      program.programId,
+      provider,
+    )
     await program.methods
-      .planetUpgradeBuilding(1, 3, { planetaryCapital })
+      .planetUpgradeBuilding(1, 3, { planetaryCapital: {} })
       .accounts({
         signer: playerWallet.publicKey,
       })
       .signers([playerWallet])
       .rpc()
-    // .catch((e) => {
-    //   console.error(e)
-    //   return assert.fail(e)
-    // })
-    // const balances2 = await getPlayerBalances(
-    //   playerWallet,
-    //   program.programId,
-    //   provider,
-    // )
-    // const diff = balanceDiff(balances1, balances2)
-    // if ((diff.fuel || 0) >= 0) {
-    //   assert.fail('Looks like no resources were used up.')
-    // }
+      .catch((e) => {
+        console.error(e)
+        return assert.fail(e)
+      })
+    const balances2 = await getPlayerBalances(
+      playerWallet,
+      program.programId,
+      provider,
+    )
+    const diff = balanceDiff(balances1, balances2)
+    if (diff.fuel === 0) {
+      assert.fail('Looks like no resources were used up.')
+    }
   })
 })

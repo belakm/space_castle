@@ -84,6 +84,8 @@ mod space_castle {
     /// Planet - upgrades a building
     pub fn planet_upgrade_building(
         ctx: Context<PlanetUpgradeBuilding>,
+        x: u16,
+        y: u16,
         building_type: BuildingType,
     ) -> Result<()> {
         instructions::planet_upgrade_building(ctx, building_type)

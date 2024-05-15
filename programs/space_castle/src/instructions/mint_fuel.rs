@@ -82,12 +82,12 @@ pub fn process_burn_fuel<'info>(
     token_program: &Program<'info, Token>,
     (
         from,
-        (mint, mint_bump),
-        authority 
-    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+        mint,
+        (authority, authority_bump)
+    ): (&Account<'info, TokenAccount>, &Account<'info, Mint>, (&Account<'info, ResourceAuthority>, u8)),
     amount: u64
 ) -> Result<()>{
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[mint_bump]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::RESOURCE_AUTHORITY, &[authority_bump]]];
     let cpi_accounts = Burn {
         mint: mint.to_account_info(),
         from: from.to_account_info(),

@@ -87,16 +87,16 @@ pub fn process_burn_metal<'info>(
     token_program: &Program<'info, Token>,
     (
         from,
-        (mint, mint_bump),
-        authority 
-    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+        mint,
+        (authority, authority_bump) 
+    ): (&Account<'info, TokenAccount>, &Account<'info, Mint>, (&Account<'info, ResourceAuthority>, u8)),
     amount: u64
 ) -> Result<()>{
     token::burn(CpiContext::new_with_signer(token_program.to_account_info(), Burn {
-        mint: mint.to_account_info(),
         from: from.to_account_info(),
+        mint: mint.to_account_info(),
         authority: authority.to_account_info(),
-    }, &[&[seeds::MINT_METAL, &[mint_bump]]]), amount)
+    }, &[&[seeds::RESOURCE_AUTHORITY, &[authority_bump]]]), amount)
 }
 
 #[derive(Accounts)]

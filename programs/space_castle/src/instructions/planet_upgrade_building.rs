@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{ Mint, Token, TokenAccount };
-use crate::{building::BuildingType, error::GenericError, planet::*, process_burn_chemical, process_burn_crystal, process_burn_fuel, process_burn_metal, seeds };
+use crate::{building::BuildingType, error::GenericError, planet::*, process_burn_chemical, process_burn_crystal, process_burn_fuel, process_burn_metal, resource::ResourceAuthority, seeds };
 
 // TODO: This could be optimized by using a separate call for each building (possibly) 
 
@@ -17,8 +17,8 @@ pub fn planet_upgrade_building(ctx: Context<PlanetUpgradeBuilding>, building_typ
                         if amount == 0 { continue; }
                         let burn_context = (
                            &ctx.accounts.account_metal,
-                           (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-                           &ctx.accounts.mint_metal 
+                           &ctx.accounts.mint_metal,
+                           (&ctx.accounts.resource_authority, ctx.bumps.resource_authority)
                         );
                         process_burn_metal(&ctx.accounts.token_program, burn_context, amount)?;
                     }
@@ -26,9 +26,9 @@ pub fn planet_upgrade_building(ctx: Context<PlanetUpgradeBuilding>, building_typ
                         amount = costs.crystal;
                         if amount == 0 { continue; }
                         let burn_context = (
-                           &ctx.accounts.account_metal,
-                           (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-                           &ctx.accounts.mint_metal 
+                           &ctx.accounts.account_crystal,
+                           &ctx.accounts.mint_crystal,
+                           (&ctx.accounts.resource_authority, ctx.bumps.resource_authority)
                         );
                         process_burn_crystal(&ctx.accounts.token_program, burn_context, amount)?;
                     }
@@ -36,19 +36,19 @@ pub fn planet_upgrade_building(ctx: Context<PlanetUpgradeBuilding>, building_typ
                         amount = costs.chemical; 
                         if amount == 0 { continue; }
                         let burn_context = (
-                           &ctx.accounts.account_metal,
-                           (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-                           &ctx.accounts.mint_metal 
+                           &ctx.accounts.account_chemical,
+                           &ctx.accounts.mint_chemical,
+                           (&ctx.accounts.resource_authority, ctx.bumps.resource_authority)
                         );
                         process_burn_chemical(&ctx.accounts.token_program, burn_context, amount)?;
                     }
                     "fuel" => {
-                        amount = costs.metal; 
+                        amount = costs.fuel; 
                         if amount == 0 { continue; }
                         let burn_context = (
-                           &ctx.accounts.account_metal,
-                           (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-                           &ctx.accounts.mint_metal 
+                           &ctx.accounts.account_fuel,
+                           &ctx.accounts.mint_fuel,
+                           (&ctx.accounts.resource_authority, ctx.bumps.resource_authority)
                         );
                         process_burn_fuel(&ctx.accounts.token_program, burn_context, amount)?;
                     },
@@ -77,6 +77,11 @@ pub struct PlanetUpgradeBuilding<'info> {
         bump, 
     )]
     pub planet_holding: Account<'info, PlanetHolding>,
+
+    // Resource authority
+    #[account(mut, seeds = [seeds::RESOURCE_AUTHORITY], bump)]
+    pub resource_authority: Account<'info, ResourceAuthority>,
+
     // Mints
     #[account(mut, seeds = [seeds::MINT_METAL], bump)]
     pub mint_metal: Account<'info, Mint>,

@@ -10,7 +10,7 @@ import { AnchorProvider } from '@coral-xyz/anchor'
  * Log a line break
  */
 export function lineBreak() {
-  console.log('----------------------------------------------------')
+  console.log('--------------------------------------------------------')
 }
 
 /**
@@ -213,16 +213,16 @@ export async function logPlayerBalances(
     provider,
     mintKey,
   )
-  const format = ''
+  let format = ' Balances:'
   lineBreak()
   for (const r of resourceKeys) {
     if (mintKey && mintKey !== r) {
       continue
     }
     const holding = holdings[r]
-    format.concat(`| ${holding} ${r}`)
+    format = format.concat(` | ${holding} ${r}`)
   }
-  console.log(format.substring(2))
+  console.log(format)
   lineBreak()
 }
 

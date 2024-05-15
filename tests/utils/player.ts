@@ -45,7 +45,7 @@ export async function usePlayer(index: number): Promise<Keypair> {
   } else {
     keypair = parseWallet(index)
   }
-  console.log(`Using player ${index}: ${keypair.publicKey}`)
+  // console.log(`\tUsing player ${index}: ${keypair.publicKey}`)
   return keypair
 }
 
@@ -82,7 +82,7 @@ async function getPlayerHolding(
   return balance.value.uiAmount || 0
 }
 
-export type PlayerBalances = { [K in ResourceKey]?: number }
+export type PlayerBalances = { [K in ResourceKey]: number }
 export const resourceKeys = ['igt', 'metal', 'crystal', 'chemical', 'fuel']
 
 export async function getPlayerBalances(
@@ -91,7 +91,13 @@ export async function getPlayerBalances(
   provider: anchor.AnchorProvider,
   mintKey?: string,
 ) {
-  const balances: PlayerBalances = {}
+  const balances: PlayerBalances = {
+    igt: 0,
+    metal: 0,
+    crystal: 0,
+    chemical: 0,
+    fuel: 0,
+  }
   for (const r of resourceKeys) {
     if (mintKey && mintKey !== r) {
       continue

@@ -120,6 +120,23 @@ pub enum BuildingType {
     Infrastructure,
 }
 
+impl BuildingType {
+    pub fn from_str(input: &str) -> Result<BuildingType> {
+        match input {
+            "Infrastructure" => Ok(BuildingType::Infrastructure),
+            "PlanetaryCapital" => Ok(BuildingType::PlanetaryCapital),
+            "ChemicalRefinery" => Ok(BuildingType::ChemicalRefinery),
+            "MetalIndustry" => Ok(BuildingType::MetalIndustry),
+            "CrystalLabs" => Ok(BuildingType::CrystalLabs),
+            "FuelExtractors" => Ok(BuildingType::FuelExtractors),
+            "AstralNavyHQ" => Ok(BuildingType::AstralNavyHQ),
+            "Shipyard" => Ok(BuildingType::Shipyard),
+            "TradeBeacon" => Ok(BuildingType::TradeBeacon),
+            _ => Err(BuildingErrorCode::BuildingKey.into()),
+        }
+    }
+}
+
 pub struct BuildingCost {
     pub metal: u64,
     pub crystal: u64,
@@ -133,4 +150,10 @@ pub fn generate_initial_buildings_for_planet(x: u16, y: u16) -> [Building; 6] {
     starting_buildings[1] = Building::default_shipyard();
     starting_buildings[2] = Building::default_industry(get_planet_resources(x, y));
     starting_buildings
+}
+
+#[error_code]
+pub enum BuildingErrorCode {
+    #[msg("Building key given doesn't match any buildings")]
+    BuildingKey,
 }
