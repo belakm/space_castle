@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     mint_decimals,
     planet::get_planet_resources,
-    utilities::{calculate_upgrade_cost, convert_from_float, convert_to_float},
+    utilities::{calculate_upgrade_cost, convert_from_float},
 };
 
 #[account]
@@ -83,9 +83,9 @@ impl Building {
     /// A tuple where its params are quantities of resources each u16:
     /// * [`metal`, `crystal`, `chemical`, `fuel`]
     ///
-    pub fn calculate_upgrade_cost(&self) -> BuildingCost {
+    pub fn calculate_upgrade_cost(&self) -> ResourceCost {
         let [metal, crystal, chemical, fuel] = self.base_upgrade_cost();
-        BuildingCost {
+        ResourceCost {
             metal: convert_from_float(
                 calculate_upgrade_cost(metal, Building::UPGRADE_FACTOR, self.level),
                 mint_decimals::METAL,
@@ -137,11 +137,23 @@ impl BuildingType {
     }
 }
 
-pub struct BuildingCost {
+pub struct ResourceCost {
     pub metal: u64,
     pub crystal: u64,
     pub chemical: u64,
     pub fuel: u64,
+}
+
+impl ResourceCost {
+    pub fn by_key(&self, key: &str) -> u64 {
+        match key {
+            "metal" => self.metal,
+            "crystal" => self.crystal,
+            "chemical" => self.chemical,
+            "fuel" => self.fuel,
+            _ => 0u64,
+        }
+    }
 }
 
 pub fn generate_initial_buildings_for_planet(x: u16, y: u16) -> [Building; 6] {
@@ -156,4 +168,10 @@ pub fn generate_initial_buildings_for_planet(x: u16, y: u16) -> [Building; 6] {
 pub enum BuildingErrorCode {
     #[msg("Building key given doesn't match any buildings")]
     BuildingKey,
+    #[msg("Building has already been built on this planet")]
+    BuildingAlreadyBuilt,
+    #[msg("Planet has no empty building slots left")]
+    NoBuildingSpotLeft,
+    #[msg("BuildingNotPresent")]
+    BuildingNotPresent,
 }

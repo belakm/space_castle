@@ -12,9 +12,6 @@ use crate::{resource::ResourceAuthority, seeds};
 
 pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[ctx.bumps.mint]]];
-    let ra = &mut ctx.accounts.resource_authority;
-    ra.metal_mint_bump = ctx.bumps.mint;
-
     create_metadata_accounts_v3(
         CpiContext::new(
             ctx.accounts.token_metadata_program.to_account_info(),

@@ -81,14 +81,33 @@ mod space_castle {
     pub fn planet_harvest(ctx: Context<PlanetHarvest>, x: u16, y: u16) -> Result<()> {
         instructions::planet_harvest(ctx, x, y)
     }
-    /// Planet - upgrades a building
-    pub fn planet_upgrade_building(
-        ctx: Context<PlanetUpgradeBuilding>,
-        x: u16,
-        y: u16,
+    /// Planet - build a new building
+    pub fn planet_building_new(
+        ctx: Context<PlanetBuildingNew>,
+        _x: u16,
+        _y: u16,
         building_type: BuildingType,
     ) -> Result<()> {
-        instructions::planet_upgrade_building(ctx, building_type)
+        instructions::planet_building_new(ctx, building_type)
+    }
+    /// Planet - upgrade a building
+    pub fn planet_building_upgrade(
+        ctx: Context<PlanetBuildingUpgrade>,
+        _x: u16,
+        _y: u16,
+        building_type: BuildingType,
+    ) -> Result<()> {
+        instructions::planet_building_upgrade(ctx, building_type)
+    }
+    /// Planet - change a building
+    pub fn planet_building_change(
+        ctx: Context<PlanetBuildingChange>,
+        _x: u16,
+        _y: u16,
+        building_type_from: BuildingType,
+        building_type_to: BuildingType,
+    ) -> Result<()> {
+        instructions::planet_building_change(ctx, building_type_from, building_type_to)
     }
 
     ///

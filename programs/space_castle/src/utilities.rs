@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul};
+use std::ops::{Div, Mul};
 
 /// Converts a `u64` value - in this case the balance of a token account - into
 /// an `f32` by using the `decimals` value of its associated mint to get the
