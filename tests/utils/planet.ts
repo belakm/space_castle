@@ -2,6 +2,19 @@ import * as anchor from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
 import { SpaceCastle } from '../../target/types/space_castle'
 
+// prettier-ignore
+type AllPossibleKeys<T> =
+  T extends Array<infer U>
+  ? keyof U | (U extends { buildingType: infer V } ? keyof V : never)
+  : never
+
+export type BuildingType = Exclude<
+  AllPossibleKeys<Awaited<ReturnType<typeof getHoldings>>['buildings']>,
+  'level'
+>
+
+export type PlanetHolding = Awaited<ReturnType<typeof getHoldings>>
+
 export async function getHoldings(
   x: number,
   y: number,
@@ -21,15 +34,15 @@ export async function getHoldings(
 }
 
 export function getBuilding(
-  holding: Awaited<ReturnType<typeof getHoldings>>,
-  buildingType: string,
+  holding: PlanetHolding,
+  buildingType: BuildingType,
 ) {
-  return holding.buildings.find((b) => b[buildingType])
+  return holding.buildings.find((b) => b.buildingType[buildingType] != null)
 }
 
 export function hasBuilding(
-  buildings: Record<string, unknown>,
-  buildingType: string,
+  holding: PlanetHolding,
+  buildingType: BuildingType,
 ) {
-  return Object.keys(buildings).includes(buildingType)
+  return holding.buildings.find((b) => b.buildingType[buildingType]) != null
 }

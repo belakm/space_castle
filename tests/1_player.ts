@@ -4,10 +4,9 @@ import { type SpaceCastle } from '../target/types/space_castle'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import { assert } from 'chai'
 import { getPlayerBalances, usePlayer } from './utils/player'
-import { logPlayerBalances } from './utils/log'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 
-describe('[Unit]: Player', () => {
+describe('[Unit]: 👨 Player', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   const provider = anchor.AnchorProvider.env()
   let playerWallet: Keypair
@@ -39,22 +38,19 @@ describe('[Unit]: Player', () => {
       .rpc()
   })
 
-  it('New player has been given a token amount of IGT', async () => {
+  it('New player gets a token amount of iGT', async () => {
     const holdings = await getPlayerBalances(
       playerWallet,
       program.programId,
       provider,
       'igt',
     )
-    if (holdings.igt && holdings.igt > 0) {
-      await logPlayerBalances(playerWallet, program.programId, provider, 'igt')
-      return assert.ok('Player got its IGT')
-    } else {
+    if (!holdings.igt || holdings.igt <= 0) {
       return assert.fail("Player wasn't credited")
     }
   })
 
-  it('Activate resource accounts for player 1', async () => {
+  it('Activate resource accounts for player', async () => {
     await program.methods
       .playerCreateResourceAccountsPart1()
       .accounts({
@@ -91,7 +87,7 @@ describe('[Unit]: Player', () => {
     }
   })
 
-  it('Create Player 2', async () => {
+  it('Another Player', async () => {
     const tokenAccount = getAssociatedTokenAddressSync(
       mintIGT,
       secondPlayerWallet.publicKey,

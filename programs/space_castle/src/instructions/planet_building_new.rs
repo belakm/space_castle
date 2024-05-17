@@ -3,43 +3,45 @@ use anchor_spl::token::{ Mint, Token, TokenAccount };
 use crate::{building::{Building, BuildingErrorCode, BuildingType}, planet::*, resource::{burn_resources, ResourceAuthority}, seeds };
 
 pub fn planet_building_new(ctx: Context<PlanetBuildingNew>, building_type: BuildingType) -> Result<()> {
-    let mut build_spot: Option<u8> = None;
+    let mut build_spot: Option<usize> = None;
     for (index, b) in ctx.accounts.planet_holding.buildings.iter_mut().enumerate() {
         if b.building_type.eq(&building_type) {
             return Err(BuildingErrorCode::BuildingAlreadyBuilt.into())
         }
         if build_spot.is_none() && b.building_type.eq(&BuildingType::None) {
-            build_spot = Some(index as u8);
+            build_spot = Some(index);
         }
     }
-    if build_spot.is_none() {
-        return Err(BuildingErrorCode::BuildingAlreadyBuilt.into());
+    if let Some(build_spot) = build_spot {
+        let holding = &mut ctx.accounts.planet_holding;
+        let new_building = Building {
+            level: 1,
+            building_type
+        };
+        holding.buildings[build_spot] = new_building;
+        let costs = new_building.calculate_upgrade_cost();
+        burn_resources(
+            costs, 
+            &ctx.accounts.token_program, 
+            &ctx.accounts.resource_authority, 
+            ctx.bumps.resource_authority,
+            (
+                &ctx.accounts.mint_metal, 
+                &ctx.accounts.mint_crystal, 
+                &ctx.accounts.mint_chemical, 
+                &ctx.accounts.mint_fuel
+            ),
+            (
+                &ctx.accounts.account_metal, 
+                &ctx.accounts.account_crystal, 
+                &ctx.accounts.account_chemical, 
+                &ctx.accounts.account_fuel
+            )
+        )?;
+   
+    } else {
+       return Err(BuildingErrorCode::NoBuildingSpotLeft.into());
     }
-
-    let building = Building {
-        level: 1,
-        building_type
-    };
-    let costs = building.calculate_upgrade_cost();
-
-    burn_resources(
-        costs, 
-        &ctx.accounts.token_program, 
-        &ctx.accounts.resource_authority, 
-        ctx.bumps.resource_authority,
-        (
-            &ctx.accounts.mint_metal, 
-            &ctx.accounts.mint_crystal, 
-            &ctx.accounts.mint_chemical, 
-            &ctx.accounts.mint_fuel
-        ),
-        (
-            &ctx.accounts.account_metal, 
-            &ctx.accounts.account_crystal, 
-            &ctx.accounts.account_chemical, 
-            &ctx.accounts.account_fuel
-        )
-    )?;
     Ok(())
 }
 

@@ -4,7 +4,7 @@ import { SpaceCastle } from '../target/types/space_castle'
 import { clearPlayers, usePlayer } from './utils/player'
 import { assert } from 'chai'
 
-describe('[Unit]: Mints', () => {
+describe('[Unit]: 💰 Mints', () => {
   const provider = anchor.AnchorProvider.env()
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
   anchor.setProvider(provider)
@@ -86,7 +86,7 @@ describe('[Unit]: Mints', () => {
     playerWallet = await usePlayer(1)
   })
 
-  it('Creates IGT Mint and metadata', async () => {
+  it('Intergalactic Tender: mint and metadata', async () => {
     await program.methods
       .mintInitIgt()
       .accounts({
@@ -99,7 +99,7 @@ describe('[Unit]: Mints', () => {
         return assert.fail(e)
       })
   })
-  it('Creates Metal Mint and metadata', async () => {
+  it('Metal: mint and metadata', async () => {
     await program.methods
       .mintInitMetal()
       .accounts({
@@ -112,7 +112,7 @@ describe('[Unit]: Mints', () => {
         return assert.fail(e)
       })
   })
-  it('Creates Crystal Mint and metadata', async () => {
+  it('Crystal: mint and metadata', async () => {
     await program.methods
       .mintInitCrystal()
       .accounts({
@@ -125,7 +125,7 @@ describe('[Unit]: Mints', () => {
         return assert.fail(e)
       })
   })
-  it('Creates Chemical Mint and metadata', async () => {
+  it('Chemical: mint and metadata', async () => {
     await program.methods
       .mintInitChemical()
       .accounts({
@@ -138,7 +138,7 @@ describe('[Unit]: Mints', () => {
         return assert.fail(e)
       })
   })
-  it('Creates Fuel Mint and metadata', async () => {
+  it('Fuel: mint and metadata', async () => {
     await program.methods
       .mintInitFuel()
       .accounts({

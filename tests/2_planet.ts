@@ -1,12 +1,12 @@
 import * as anchor from '@coral-xyz/anchor'
 import { type Program } from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
-import { Keypair, PublicKey } from '@solana/web3.js'
+import { Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
 import { getPlayerBalances, resourceKeys, usePlayer } from './utils/player'
-import { lineBreak, logPlayerBalances } from './utils/log'
+import { getHoldings, hasBuilding } from './utils/planet'
 
-describe('[Unit]: Planet', () => {
+describe('[Unit]: 🪐 Planet', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
@@ -53,43 +53,19 @@ describe('[Unit]: Planet', () => {
         return assert.fail('Missing resources after claim')
       }
     }
-    await logPlayerBalances(playerWallet, program.programId, provider)
   })
 
   it('Planet has starting buildings', async () => {
-    const xBuffer = Buffer.alloc(2) // Allocate 2 bytes for u16
-    const yBuffer = Buffer.alloc(2) // Allocate 2 bytes for u16
-    xBuffer.writeUInt16LE(1, 0) // Little-endian format
-    yBuffer.writeUInt16LE(3, 0) // Little-endian format
-    const [planetHoldingPDA] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('planet_holding'),
-        playerWallet.publicKey.toBuffer(),
-        xBuffer,
-        yBuffer,
-      ],
-      program.programId,
-    )
-    const accountInfo =
-      await program.account.planetHolding.fetch(planetHoldingPDA)
-
-    let hasBuildings = false
-    let format = '  Buildings: '
-    for (const b of accountInfo.buildings) {
-      const building = Object.keys(b.buildingType)[0]
-      if (building === 'planetaryCapital') {
-        hasBuildings = true
-      }
-      if (building !== 'none') {
-        format += `| ${building} lvl. ${b.level} `
-      }
+    const holdings = await getHoldings(1, 3, playerWallet.publicKey, program)
+    const hasAllTheRightBuildings =
+      hasBuilding(holdings, 'planetaryCapital') &&
+      hasBuilding(holdings, 'shipyard') &&
+      (hasBuilding(holdings, 'crystalLabs') ||
+        hasBuilding(holdings, 'metalIndustry') ||
+        hasBuilding(holdings, 'chemicalRefinery'))
+    if (!hasAllTheRightBuildings) {
+      assert.fail(`Missing the three starter buildings`)
     }
-    lineBreak()
-    console.log(format)
-    lineBreak()
-    return hasBuildings
-      ? assert.ok('It does')
-      : assert.fail('No buildings were created')
   })
 
   it("Can't claim already claimed planet", async () => {

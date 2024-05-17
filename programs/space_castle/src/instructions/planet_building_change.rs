@@ -12,7 +12,8 @@ pub fn planet_building_change(ctx: Context<PlanetBuildingChange>, building_type_
                 level: building.level
             };
             let costs = new_building.calculate_upgrade_cost();
-            new_building.level = building.level.saturating_div(2).min(1);
+            building.level = building.level.saturating_div(2).min(1);
+            building.building_type = building_type_to;
             burn_resources(
                 costs, 
                 &ctx.accounts.token_program, 

@@ -10,8 +10,9 @@ import {
   usePlayer,
 } from './utils/player'
 import { getBuilding, getHoldings, hasBuilding } from './utils/planet'
+import { mintAllResourcesToAddress } from './utils/token'
 
-describe('[Unit]: Buildings', () => {
+describe('[Unit]: 🏰 Buildings', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
@@ -26,6 +27,7 @@ describe('[Unit]: Buildings', () => {
       program.programId,
       provider,
     )
+    await mintAllResourcesToAddress(playerWallet)
   })
 
   it('Player can build a new building on the planet', async () => {
@@ -41,9 +43,9 @@ describe('[Unit]: Buildings', () => {
         return assert.fail(e)
       })
 
-    const buildings = await getHoldings(1, 3, playerWallet.publicKey, program)
-    if (!buildings || !hasBuilding(buildings, 'astralNavyHq')) {
-      return assert.fail('Building not on the planet')
+    const holding = await getHoldings(1, 3, playerWallet.publicKey, program)
+    if (!holding || !hasBuilding(holding, 'astralNavyHq')) {
+      return assert.fail('Building was not built')
     }
   })
 
@@ -73,13 +75,13 @@ describe('[Unit]: Buildings', () => {
         return assert.fail(e)
       })
 
-    const buildings = await getHoldings(1, 3, playerWallet.publicKey, program)
-    if (!buildings || !(getBuilding(buildings, 'astralNavyHq')?.level === 2)) {
+    const holding = await getHoldings(1, 3, playerWallet.publicKey, program)
+    if (!holding || !(getBuilding(holding, 'astralNavyHq')?.level === 2)) {
       return assert.fail('Building was not upgraded')
     }
   })
 
-  it('Player paid resources for the upgrade of the building', async () => {
+  it('Player paid resources for the upgrade', async () => {
     const lastBalance = { ...latestBalance }
     latestBalance = await getPlayerBalances(
       playerWallet,
@@ -106,12 +108,12 @@ describe('[Unit]: Buildings', () => {
         return assert.fail(e)
       })
 
-    const buildings = await getHoldings(1, 3, playerWallet.publicKey, program)
+    const holding = await getHoldings(1, 3, playerWallet.publicKey, program)
     if (
-      !buildings ||
+      !holding ||
       !(
-        hasBuilding(buildings, 'fuelExtractors') &&
-        hasBuilding(buildings, 'astralNavyHq')
+        hasBuilding(holding, 'fuelExtractors') &&
+        !hasBuilding(holding, 'astralNavyHq')
       )
     ) {
       return assert.fail('Building was not changed')
@@ -125,11 +127,11 @@ describe('[Unit]: Buildings', () => {
     if (
       !(oldBuilding && newBuilding && oldBuilding.level > newBuilding.level)
     ) {
-      return assert.fail('Building was not upgraded')
+      return assert.fail('Building did not lose levels when upgraded')
     }
   })
 
-  it('Player paid resources for the change of the building', async () => {
+  it('Player paid resources for the change', async () => {
     const lastBalance = { ...latestBalance }
     latestBalance = await getPlayerBalances(
       playerWallet,

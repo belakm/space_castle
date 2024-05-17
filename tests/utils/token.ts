@@ -30,61 +30,38 @@ export function fromBigIntQuantity(quantity: bigint, decimals: number): string {
 }
 
 export async function mintAllResourcesToAddress(signer: Signer) {
-  const provider = anchor.AnchorProvider.env()
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
-
   const methods = {
     metal: program.methods.mintMetal,
     crystal: program.methods.mintCrystal,
     chemical: program.methods.mintChemical,
     fuel: program.methods.mintFuel,
   }
-
-  console.log('\n\tMinting for address: ', signer.publicKey.toString())
-
   for (const resource of MARKET_RESOURCES) {
     const [mint] = PublicKey.findProgramAddressSync(
       [Buffer.from('mint_' + resource.mintKey)],
       program.programId,
     )
-    if (resource.symbol === 'IGT') {
+    if (resource.symbol === 'iGT') {
       const associatedTokenAccount = getAssociatedTokenAddressSync(
         mint,
         signer.publicKey,
       )
       await program.methods
-        .mintIgt(new anchor.BN(1000000))
+        .mintIgt(new anchor.BN(10000000))
         .accounts({
           tokenAccount: associatedTokenAccount,
           payer: signer.publicKey,
         })
         .signers([signer])
         .rpc()
-      const balance = await provider.connection.getTokenAccountBalance(
-        associatedTokenAccount,
-      )
-      console.log(
-        `\tPlayer balance: ${balance.value.uiAmount} ${resource.symbol}`,
-      )
     } else {
-      const [signer_pda] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from('account_' + resource.mintKey),
-          signer.publicKey.toBuffer(),
-        ],
-        program.programId,
-      )
-      await methods[resource.mintKey](new anchor.BN(10000))
+      await methods[resource.mintKey](new anchor.BN(1000000))
         .accounts({
           payer: signer.publicKey,
         })
         .signers([signer])
         .rpc()
-      const balance =
-        await provider.connection.getTokenAccountBalance(signer_pda)
-      console.log(
-        `\tPlayer balance of ${resource.name}: ${balance.value.uiAmount} ${resource.symbol}\npda acc: ${signer_pda}\n`,
-      )
     }
   }
 }

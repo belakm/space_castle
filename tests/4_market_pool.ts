@@ -13,7 +13,7 @@ import {
 import { logChangeInK } from './utils/log'
 import { usePlayer } from './utils/player'
 
-describe('[Unit] Market pool', () => {
+describe('[Unit] 💱 Market pool', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
@@ -71,7 +71,7 @@ describe('[Unit] Market pool', () => {
     },
   )
 
-  it('Init market pool', async () => {
+  it('Market pool initializes', async () => {
     if (poolInitialized) {
       return assert.ok('Pool exists already.')
     }
@@ -84,7 +84,7 @@ describe('[Unit] Market pool', () => {
       .rpc()
   })
 
-  it('Mint resources to pool', async () => {
+  it('Market pool can be filled with resources and iGT', async () => {
     for (const resource of MARKET_RESOURCES) {
       const mint = PublicKey.findProgramAddressSync(
         [Buffer.from('mint_' + resource.mintKey)],
@@ -107,7 +107,7 @@ describe('[Unit] Market pool', () => {
     }
   })
 
-  it('Each resource can be swaped with any other resource on the market', async () => {
+  it('Player can exchange any resource for any other resource on the market', async () => {
     const initialK = await getPoolData()
     for (const payResource of MARKET_RESOURCES) {
       for (const receiveResource of MARKET_RESOURCES) {
@@ -135,26 +135,26 @@ describe('[Unit] Market pool', () => {
             payResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)
               : PublicKey.findProgramAddressSync(
-                  [
-                    Buffer.from('account_' + payResource.mintKey),
-                    playerWallet.publicKey.toBuffer(),
-                  ],
-                  program.programId,
-                )[0]
+                [
+                  Buffer.from('account_' + payResource.mintKey),
+                  playerWallet.publicKey.toBuffer(),
+                ],
+                program.programId,
+              )[0]
 
           const payerReceiveTokenAccount =
             receiveResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(
-                  receiveMint,
-                  playerWallet.publicKey,
-                )
+                receiveMint,
+                playerWallet.publicKey,
+              )
               : PublicKey.findProgramAddressSync(
-                  [
-                    Buffer.from('account_' + receiveResource.mintKey),
-                    playerWallet.publicKey.toBuffer(),
-                  ],
-                  program.programId,
-                )[0]
+                [
+                  Buffer.from('account_' + receiveResource.mintKey),
+                  playerWallet.publicKey.toBuffer(),
+                ],
+                program.programId,
+              )[0]
 
           const poolPayTokenAccount = getAssociatedTokenAddressSync(
             payMint,
