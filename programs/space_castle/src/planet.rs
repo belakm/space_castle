@@ -14,6 +14,12 @@ pub struct PlanetInfo {
     pub owner: Option<Pubkey>,
 }
 
+impl PlanetInfo {
+    pub fn planet_affinity(&self) -> u8 {
+        return get_planet_affinity([self.metal, self.crystal, self.chemical, self.fuel]);
+    }
+}
+
 #[derive(InitSpace)]
 #[account]
 pub struct PlanetHolding {
@@ -59,6 +65,26 @@ pub fn get_planet_resources(x: u16, y: u16) -> [u16; 4] {
         }
     }
     new_values
+}
+
+/// Gets planet resources
+///
+/// # Arguments
+///
+/// * `resources` - [metal, crystal, chemical, fuel]
+///
+/// # Returns
+///
+/// Index from 0 to 2 of which resource is the most bountiful
+///
+pub fn get_planet_affinity([metal, crystal, chemical, _]: [u16; 4]) -> u8 {
+    if metal > crystal && metal > chemical {
+        0
+    } else if crystal > chemical {
+        1
+    } else {
+        2
+    }
 }
 
 #[error_code]

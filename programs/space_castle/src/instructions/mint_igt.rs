@@ -1,12 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    token::{self, Mint, MintTo, Token, TokenAccount}, 
-    associated_token::AssociatedToken,
-    metadata::{
-        create_metadata_accounts_v3,
-        mpl_token_metadata::types::DataV2,
-        CreateMetadataAccountsV3, Metadata,
-    },
+    associated_token::AssociatedToken, metadata::{
+        create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMetadataAccountsV3, Metadata
+    }, token::{self, Burn, Mint, MintTo, Token, TokenAccount}
 };
 
 use crate::seeds;
@@ -57,6 +53,25 @@ pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
         .with_signer(signer_seeds),
         amount * 10u64.pow(ctx.accounts.mint.decimals as u32),
     )
+}
+
+pub fn process_burn_igt<'info>(
+    token_program: &Program<'info, Token>,
+    (
+        from,
+        mint,
+        authority
+    ): (&Account<'info, TokenAccount>, &Account<'info, Mint>, &Account<'info, Mint>),
+    amount: u64
+) -> Result<()>{
+    let cpi_accounts = Burn {
+        mint: mint.to_account_info(),
+        from: from.to_account_info(),
+        authority: authority.to_account_info(),
+    };
+    let cpi_program = token_program.to_account_info();
+    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    token::burn(cpi_ctx, amount)
 }
 
 #[derive(Accounts)]

@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, TokenAccount, Mint};
-use solana_program::clock::Clock;
-use crate::{building::generate_initial_buildings_for_planet, planet::*, player::*, process_mint_chemical, process_mint_crystal, process_mint_fuel, process_mint_metal, resource::ResourceAuthority, seeds, ship::*};
+use crate::{building::generate_initial_buildings_for_planet, planet::*, player::*, seeds, fleet::*};
 
 pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Result<()> {
     // CHECK IF PLANET ACTUALLY EXISTS
@@ -29,12 +27,16 @@ pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Res
     }
     player_info.settled_planets = 1;
 
-    // Create initial buildings
-    ctx.accounts.planet_holding.buildings = generate_initial_buildings_for_planet(x, y);
+    // Get affinity (metal = 0, crystal = 1, chemical = 2)
+    let planet_resources = get_planet_resources(x, y);
+    let planet_affinity = get_planet_affinity(planet_resources);
 
-    // Create one initial ship for the player 
-    let initial_ship = &mut ctx.accounts.initial_ship;
-    initial_ship.convert_to_starting_ship();
+    // Create initial buildings
+    ctx.accounts.planet_holding.buildings = generate_initial_buildings_for_planet(planet_resources);
+
+    // Create one initial fleet for the player 
+    let initial_fleet = &mut ctx.accounts.initial_fleet;
+    initial_fleet.into_starting_fleet(planet_affinity);
 
     Ok(())
 }
@@ -72,11 +74,15 @@ pub struct PlanetFirstClaim<'info> {
     #[account(
         init,
         payer = signer,
-        seeds = [seeds::SHIP, signer.key().as_ref(), b"1"], 
+        seeds = [
+            seeds::FLEET, 
+            x.to_le_bytes().as_ref(), 
+            y.to_le_bytes().as_ref(), 
+        ], 
         bump,
-        space = 8 + Ship::INIT_SPACE 
+        space = 8 + Fleet::INIT_SPACE 
     )]
-    pub initial_ship: Account<'info, Ship>,
+    pub initial_fleet: Account<'info, Fleet>,
     #[account(
         mut,
         seeds = [seeds::PLAYER, signer.key().as_ref()],

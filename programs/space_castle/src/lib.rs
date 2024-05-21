@@ -1,11 +1,11 @@
 mod building;
 mod error;
+mod fleet;
 pub mod instructions;
 mod market_pool;
 mod planet;
 mod player;
 mod resource;
-mod ship;
 mod utilities;
 
 use anchor_lang::prelude::*;
@@ -26,7 +26,7 @@ pub mod seeds {
     pub const PLAYER: &[u8] = b"player";
     pub const PLANET_INFO: &[u8] = b"planet_info";
     pub const PLANET_HOLDING: &[u8] = b"planet_holding";
-    pub const SHIP: &[u8] = b"ship";
+    pub const FLEET: &[u8] = b"fleet";
     pub const GAME: &[u8] = b"game";
     pub const RESOURCE_AUTHORITY: &[u8] = b"resource_authority";
     pub const MINT_IGT: &[u8] = b"mint_igt";
@@ -108,6 +108,34 @@ mod space_castle {
         building_type_to: BuildingType,
     ) -> Result<()> {
         instructions::planet_building_change(ctx, building_type_from, building_type_to)
+    }
+
+    ///
+    /// Fleet
+    ///
+    /// Create a new fleet at (x, y)
+    pub fn fleet_new(ctx: Context<FleetNew>, _x: u16, _y: u16) -> Result<()> {
+        instructions::fleet_new(ctx)
+    }
+    /// Move a fleet to (x, y)
+    pub fn fleet_move(
+        ctx: Context<FleetMove>,
+        _x: u16,
+        _y: u16,
+        _move_x: u16,
+        _move_y: u16,
+    ) -> Result<()> {
+        instructions::fleet_move(ctx)
+    }
+    /// Move a fleet to (x, y)
+    pub fn fleet_attack(
+        ctx: Context<FleetAttack>,
+        _x: u16,
+        _y: u16,
+        _target_x: u16,
+        _target_y: u16,
+    ) -> Result<()> {
+        instructions::fleet_attack(ctx)
     }
 
     ///

@@ -2,18 +2,18 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{ Mint, Token, TokenAccount };
 use crate::{building::{Building, BuildingErrorCode, BuildingType}, planet::*,  resource::{burn_resources, ResourceAuthority}, seeds };
 
-pub fn planet_building_change(ctx: Context<PlanetBuildingChange>, building_type_from: BuildingType, building_type_to: BuildingType) -> Result<()> {
+pub fn planet_building_change(
+    ctx: Context<PlanetBuildingChange>, 
+    building_type_from: BuildingType, 
+    building_type_to: BuildingType
+) -> Result<()> {
     let building: Option<&mut Building> = ctx.accounts.planet_holding.buildings.iter_mut().find(|b| b.building_type.eq(&building_type_from));
     match building {
         None => Err(BuildingErrorCode::BuildingNotPresent.into()),
         Some(building) => {
-            let mut new_building = Building {
-                building_type: building_type_to,
-                level: building.level
-            };
-            let costs = new_building.calculate_upgrade_cost();
-            building.level = building.level.saturating_div(2).min(1);
             building.building_type = building_type_to;
+            let costs = building.calculate_upgrade_cost();
+            building.level = building.level.saturating_div(2).min(1);
             burn_resources(
                 costs, 
                 &ctx.accounts.token_program, 

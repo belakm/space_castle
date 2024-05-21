@@ -1,3 +1,6 @@
+pub mod fleet_attack;
+pub mod fleet_move;
+pub mod fleet_new;
 pub mod market_pool_create;
 pub mod market_pool_fund;
 pub mod market_pool_mint;
@@ -15,6 +18,9 @@ pub mod planet_harvest;
 pub mod player_create_resource_accounts;
 pub mod player_register;
 
+pub use fleet_attack::*;
+pub use fleet_move::*;
+pub use fleet_new::*;
 pub use market_pool_create::*;
 pub use market_pool_fund::*;
 pub use market_pool_mint::*;

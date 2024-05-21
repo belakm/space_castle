@@ -24,3 +24,33 @@ pub fn convert_from_float(value: f32, decimals: u8) -> u64 {
 pub fn calculate_upgrade_cost(base_cost: f32, growth_factor: f32, level: u8) -> f32 {
     base_cost * (growth_factor.powf((level - 1) as f32))
 }
+
+/// Sums two `(u64, [u64; 4])` tuples where the tuple is meant as `(igt_cost, [resource_costs])`
+pub fn sum_costs(base: (u64, [u64; 4]), cost: (u64, [u64; 4])) -> (u64, [u64; 4]) {
+    return (
+        base.0.saturating_add(cost.0),
+        [
+            base.1[0].saturating_add(cost.1[0]),
+            base.1[1].saturating_add(cost.1[1]),
+            base.1[2].saturating_add(cost.1[2]),
+            base.1[3].saturating_add(cost.1[3]),
+        ],
+    );
+}
+
+/// Multiplies `(u64, [u64; 4])` tuple where the tuple is meant as `(igt_cost, [resource_costs])`
+///
+/// # Params
+/// * `(igt, [metal, crystal, chemical, fuel])`
+/// * `amount` - multiplier
+pub fn multiply_costs(base: (u64, [u64; 4]), amount: u64) -> (u64, [u64; 4]) {
+    return (
+        base.0.saturating_mul(amount),
+        [
+            base.1[0].saturating_mul(amount),
+            base.1[1].saturating_mul(amount),
+            base.1[2].saturating_mul(amount),
+            base.1[3].saturating_mul(amount),
+        ],
+    );
+}

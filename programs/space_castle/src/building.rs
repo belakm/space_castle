@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     mint_decimals,
-    planet::get_planet_resources,
     utilities::{calculate_upgrade_cost, convert_from_float},
 };
 
@@ -106,7 +105,9 @@ impl Building {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, PartialEq)]
+#[derive(
+    AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub enum BuildingType {
     None,
     PlanetaryCapital,
@@ -156,11 +157,11 @@ impl ResourceCost {
     }
 }
 
-pub fn generate_initial_buildings_for_planet(x: u16, y: u16) -> [Building; 6] {
+pub fn generate_initial_buildings_for_planet(resources: [u16; 4]) -> [Building; 6] {
     let mut starting_buildings = [Building::default(); 6];
     starting_buildings[0] = Building::default_planetary_capital();
     starting_buildings[1] = Building::default_shipyard();
-    starting_buildings[2] = Building::default_industry(get_planet_resources(x, y));
+    starting_buildings[2] = Building::default_industry(resources);
     starting_buildings
 }
 
