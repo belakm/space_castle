@@ -120,22 +120,22 @@ mod space_castle {
     /// Move a fleet to (x, y)
     pub fn fleet_move(
         ctx: Context<FleetMove>,
-        _x: u16,
-        _y: u16,
-        _move_x: u16,
-        _move_y: u16,
+        x: u16,
+        y: u16,
+        move_x: u16,
+        move_y: u16,
     ) -> Result<()> {
-        instructions::fleet_move(ctx)
+        instructions::fleet_move(ctx, x, y, move_x, move_y)
     }
-    /// Move a fleet to (x, y)
+    /// Attack a fleet or planet at (x, y)
     pub fn fleet_attack(
         ctx: Context<FleetAttack>,
-        _x: u16,
-        _y: u16,
-        _target_x: u16,
-        _target_y: u16,
+        x: u16,
+        y: u16,
+        target_x: u16,
+        target_y: u16,
     ) -> Result<()> {
-        instructions::fleet_attack(ctx)
+        instructions::fleet_attack(ctx, x, y, target_x, target_y)
     }
 
     ///

@@ -1,3 +1,5 @@
+use std::{default, ops::Mul};
+
 use anchor_lang::prelude::*;
 
 use crate::{
@@ -40,13 +42,39 @@ impl Fleet {
         }
         Ok(quote)
     }
-    pub fn set_owner(&mut self, new_owner: Pubkey) {
+
+    pub fn get_move_quote(&self, (x_from, y_from): (u16, u16), (x_to, y_to): (u16, u16)) -> u64 {
+        let distance =
+            (((x_to - x_from).saturating_pow(2) + (y_to - y_from).saturating_pow(2)) as f32).sqrt();
+        let mut quote = 0u64;
+        for squadron in self.squadrons {
+            quote += (squadron.template.get_move_quote() as f32).mul(distance) as u64;
+        }
+        quote
+    }
+
+    /// Sets new owner
+    pub fn set_presence(&mut self, new_owner: Pubkey) {
         self.owner = new_owner;
+        self.is_present = true;
     }
     /// Set whether the fleet is there or not. This is because a fleet cannot be "deleted" in the
     /// traditional sense.
-    pub fn set_is_present(&mut self, is_present: bool) {
-        self.is_present = is_present;
+    pub fn reset(&mut self) {
+        self.is_present = false;
+        self.owner = Pubkey::default();
+        self.squadrons = [Squadron::default(); 16];
+    }
+
+    /// Checks if the fleet is there, used for determining whether PDA on x,y is
+    /// active
+    pub fn is_present(&self) -> bool {
+        self.is_present
+    }
+
+    /// Checks if the fleet has a specific owner
+    pub fn is_owned_by(&self, owner: &Pubkey) -> bool {
+        self.owner.eq(&owner)
     }
 }
 
@@ -98,6 +126,18 @@ impl ShipTemplate {
             costs = sum_costs(costs, multiply_costs((igt_cost, r_cost), amount as u64));
         }
         Ok(costs)
+    }
+
+    pub fn get_move_quote(&self) -> u64 {
+        let mut fuel_cost = 0u64;
+        for module in self
+            .modules
+            .iter()
+            .filter(|m| !m.module_type.eq(&ShipModuleType::None))
+        {
+            fuel_cost = fuel_cost.saturating_add(module.level as u64);
+        }
+        return fuel_cost;
     }
 }
 
@@ -217,4 +257,10 @@ pub enum FleetErrorCode {
     CantBuildMissingBuilding,
     #[msg("Planet does not have a shipyard")]
     NoShipyardOnPlanet,
+    #[msg("Missing authority over this fleet")]
+    NoAuthority,
+    #[msg("No active fleet at position")]
+    FleetNotPresent,
+    #[msg("Can't move fleet to position, its already occupied")]
+    IllegalMoveAlreadyOccupied,
 }

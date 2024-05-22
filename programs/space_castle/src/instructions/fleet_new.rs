@@ -8,8 +8,7 @@ pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
         return Err(FleetErrorCode::NoShipyardOnPlanet.into())
     }; 
     let fleet = &mut ctx.accounts.fleet;
-    fleet.set_owner(ctx.accounts.signer.key());
-    fleet.set_is_present(true);
+    fleet.set_presence(ctx.accounts.signer.key());
     let (igt_quote, resource_quote) = fleet.get_quote(ctx.accounts.planet_holding.buildings)?;
     burn_resources(
         ResourceCost {

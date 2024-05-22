@@ -1,24 +1,43 @@
 use crate::{
-    building::ResourceCost,
     fleet::{Fleet, FleetErrorCode},
-    planet::*,
-    process_burn_igt,
-    resource::{burn_resources, ResourceAuthority},
+    process_burn_fuel,
+    resource::ResourceAuthority,
     seeds,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-pub fn fleet_attack(ctx: Context<FleetAttack>) -> Result<()> {
-    Ok(())
+pub fn fleet_attack(
+    ctx: Context<FleetAttack>,
+    x: u16,
+    y: u16,
+    move_to_x: u16,
+    move_to_y: u16,
+) -> Result<()> {
+    let fleet_to = &mut ctx.accounts.fleet;
+    let fleet_from = &mut ctx.accounts.fleet_target;
+    fleet_to.clone_from(fleet_from);
+    fleet_from.reset();
+    process_burn_fuel(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.account_fuel,
+            &ctx.accounts.mint_fuel,
+            (
+                &ctx.accounts.resource_authority,
+                ctx.bumps.resource_authority,
+            ),
+        ),
+        fleet_to.get_move_quote((x, y), (move_to_x, move_to_y)),
+    )
 }
 
 #[derive(Accounts)]
-#[instruction(x: u16, y: u16, target_x: u16, target_y: u16)]
+#[instruction(x: u16, y: u16, move_to_x: u16, move_to_y: u16)]
 pub struct FleetAttack<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
-    // Fleet
+    // From
     #[account(
         mut,
         seeds = [
@@ -26,35 +45,28 @@ pub struct FleetAttack<'info> {
             y.to_le_bytes().as_ref()
         ],
         bump,
+        constraint = fleet.is_present() @ FleetErrorCode::FleetNotPresent,
+        constraint = fleet.is_owned_by(&signer.key()) @ FleetErrorCode::NoAuthority,
     )]
     pub fleet: Account<'info, Fleet>,
+    // To
+    #[account(
+        init_if_needed,
+        seeds = [
+            x.to_le_bytes().as_ref(),
+            y.to_le_bytes().as_ref()
+        ],
+        bump,
+        space = Fleet::INIT_SPACE,
+        payer = signer,
+        constraint = fleet_target.is_present() @ FleetErrorCode::FleetNotPresent,
+    )]
+    pub fleet_target: Account<'info, Fleet>,
     // Resource authority
     #[account(mut, seeds = [seeds::RESOURCE_AUTHORITY], bump)]
     pub resource_authority: Account<'info, ResourceAuthority>,
-    // Mints
-    #[account(mut, seeds = [seeds::MINT_IGT], bump)]
-    pub mint_igt: Account<'info, Mint>,
-    #[account(mut, seeds = [seeds::MINT_METAL], bump)]
-    pub mint_metal: Account<'info, Mint>,
-    #[account(mut, seeds = [seeds::MINT_CHEMICAL], bump)]
-    pub mint_chemical: Account<'info, Mint>,
-    #[account(mut, seeds = [seeds::MINT_CRYSTAL], bump)]
-    pub mint_crystal: Account<'info, Mint>,
     #[account(mut, seeds = [seeds::MINT_FUEL], bump)]
     pub mint_fuel: Account<'info, Mint>,
-    // User resource token accounts
-    #[account(
-        mut,
-        associated_token::mint = mint_igt,
-        associated_token::authority = signer 
-    )]
-    pub account_igt: Account<'info, TokenAccount>,
-    #[account(mut, seeds = [seeds::ACCOUNT_METAL, signer.key().as_ref()], bump)]
-    pub account_metal: Account<'info, TokenAccount>,
-    #[account(mut, seeds = [seeds::ACCOUNT_CRYSTAL, signer.key().as_ref()], bump)]
-    pub account_crystal: Account<'info, TokenAccount>,
-    #[account(mut, seeds = [seeds::ACCOUNT_CHEMICAL, signer.key().as_ref()], bump)]
-    pub account_chemical: Account<'info, TokenAccount>,
     #[account(mut, seeds = [seeds::ACCOUNT_FUEL, signer.key().as_ref()], bump)]
     pub account_fuel: Account<'info, TokenAccount>,
     // Programs
