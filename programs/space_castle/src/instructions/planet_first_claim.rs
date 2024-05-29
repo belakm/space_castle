@@ -36,7 +36,7 @@ pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Res
 
     // Create one initial fleet for the player 
     let initial_fleet = &mut ctx.accounts.initial_fleet;
-    initial_fleet.into_starting_fleet(planet_affinity);
+    initial_fleet.convert_to_starting_fleet(planet_affinity);
 
     Ok(())
 }

@@ -1,3 +1,4 @@
+mod battle;
 mod building;
 mod error;
 mod fleet;

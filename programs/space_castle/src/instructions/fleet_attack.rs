@@ -14,10 +14,9 @@ pub fn fleet_attack(
     move_to_x: u16,
     move_to_y: u16,
 ) -> Result<()> {
-    let fleet_to = &mut ctx.accounts.fleet;
-    let fleet_from = &mut ctx.accounts.fleet_target;
-    fleet_to.clone_from(fleet_from);
-    fleet_from.reset();
+    let fleet = &mut ctx.accounts.fleet;
+    let fleet_target = &mut ctx.accounts.fleet_target;
+
     process_burn_fuel(
         &ctx.accounts.token_program,
         (
@@ -28,7 +27,7 @@ pub fn fleet_attack(
                 ctx.bumps.resource_authority,
             ),
         ),
-        fleet_to.get_move_quote((x, y), (move_to_x, move_to_y)),
+        fleet.get_move_quote((x, y), (move_to_x, move_to_y)),
     )
 }
 
@@ -73,4 +72,3 @@ pub struct FleetAttack<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
-
