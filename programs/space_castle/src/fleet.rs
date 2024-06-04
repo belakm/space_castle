@@ -1,4 +1,7 @@
-use std::ops::{Div, Mul, Sub};
+use std::{
+    borrow::BorrowMut,
+    ops::{Div, Mul, Sub},
+};
 
 use anchor_lang::prelude::*;
 
@@ -109,24 +112,45 @@ impl Fleet {
 
     /// Takes losses and returns morale adjustment
     pub fn take_loses(&mut self, attack: &Weapons) -> FleetBattleRound {
+        let mut losses = [0u16; 16];
+        let mut morale = [Morale::Normal; 16];
+        let mut presence = [BattlePresence::Active; 16];
+        for (index, squadron) in self.squadrons.iter().enumerate() {
+            if squadron.is_none() {
+                morale[index] = Morale::Broken;
+                presence[index] = BattlePresence::Gone;
+            }
+        }
         // Calc how much dmg per squadron
         let active_squadrons = self
             .squadrons
             .iter()
             .filter_map(|s| s.as_ref())
             .filter(|s| !s.presence.eq(&BattlePresence::Gone));
-        let dmg = attack.divide(active_squadrons.copied().count() as u8);
-
-        let active_squadrons = self
-            .squadrons
-            .iter_mut()
-            .filter_map(|s| s.as_ref())
-            .filter(|s| !s.presence.eq(&BattlePresence::Gone));
-        // Apply dmg to squadrons and get next presence
-        for squadron in active_squadrons {
-            squadron.take_damage(&dmg);
+        let dmg = attack.divide(active_squadrons.count() as u8);
+        for (index, squadron) in self.squadrons.iter_mut().enumerate() {
+            if let Some(squadron) = squadron {
+                let is_retreating = squadron.morale.eq(&Morale::Broken);
+                if squadron.presence.eq(&BattlePresence::Gone) {
+                    continue;
+                }
+                let (loss, new_morale) = squadron.take_damage(&dmg);
+                morale[index] = new_morale;
+                losses[index] += loss;
+                presence[index] = if is_retreating {
+                    BattlePresence::Gone
+                } else if new_morale.eq(&Morale::Broken) {
+                    BattlePresence::Retreating
+                } else {
+                    BattlePresence::Active
+                }
+            }
         }
-        FleetBattleRound { losses: [0u16; 16] }
+        FleetBattleRound {
+            losses,
+            morale,
+            presence,
+        }
     }
 
     pub fn in_retreat(&self) -> bool {

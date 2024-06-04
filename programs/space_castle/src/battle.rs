@@ -134,16 +134,25 @@ impl Defenses {
 
 pub struct FleetBattleRound {
     pub losses: [u16; 16],
+    pub morale: [Morale; 16],
+    pub presence: [BattlePresence; 16],
 }
 
 pub fn simulate_battle(attacker: &Fleet, defender: &Fleet, r_factor: u8) -> BattleResult {
     let attacker_fleet = &mut attacker.clone();
     let defender_fleet = &mut attacker.clone();
-    let att_losses = while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() {
-        attacker_fleet.take_loses(&defender_fleet.get_battle_strength().weapons);
-        defender_fleet.take_loses(&attacker_fleet.get_battle_strength().weapons);
-    };
-    BattleResult {
-        winner: BattleSide::Attacker,
+    let mut att_losses = [0u16; 16];
+    let mut def_losses = [0u16; 16];
+    while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() {
+        let att_weapons = &attacker_fleet.get_battle_strength().weapons;
+        let def_weapons = &defender_fleet.get_battle_strength().weapons;
+        let att_losses = attacker_fleet.take_loses(def_weapons);
+        let def_losses = defender_fleet.take_loses(att_weapons);
     }
+    let winner = if attacker_fleet.in_retreat() {
+        BattleSide::Defender
+    } else {
+        BattleSide::Attacker
+    };
+    BattleResult { winner }
 }
