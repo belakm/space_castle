@@ -9,14 +9,10 @@ pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
     }; 
     let fleet = &mut ctx.accounts.fleet;
     fleet.set_presence(ctx.accounts.signer.key());
-    let (igt_quote, resource_quote) = fleet.get_quote(ctx.accounts.planet_holding.buildings)?;
+    fleet.can_be_built(ctx.accounts.planet_holding.buildings)?;
+    let quote = fleet.get_quote();
     burn_resources(
-        ResourceCost {
-            metal: resource_quote[0],
-                crystal: resource_quote[1],
-                chemical: resource_quote[2],
-                fuel: resource_quote[3],
-            }, 
+        quote.clone(), 
         &ctx.accounts.token_program, 
         &ctx.accounts.resource_authority, 
         ctx.bumps.resource_authority,
@@ -40,7 +36,7 @@ pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
         &ctx.accounts.mint_igt,
         // authority
         &ctx.accounts.mint_igt
-    ), igt_quote)
+    ), quote.igt)
 }
 
 #[derive(Accounts)]

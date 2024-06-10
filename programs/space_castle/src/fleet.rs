@@ -1,25 +1,18 @@
-use std::{
-    borrow::BorrowMut,
-    ops::{Div, Mul, Sub},
-};
-
-use anchor_lang::prelude::*;
-
 use crate::{
-    battle::{
-        BattlePresence, BattleRound, Defenses, FleetBattleRound, FleetStats, Morale, Weapons,
-    },
-    building::{Building, BuildingType},
+    battle::{BattlePresence, Defenses, FleetBattleRound, FleetStats, Morale, Weapons},
+    building::{Building, BuildingType, ResourceCost},
     mint_decimals,
-    utilities::{calculate_upgrade_cost, convert_from_float, multiply_costs, sum_costs},
+    utilities::{calculate_upgrade_cost, convert_from_float},
 };
+use anchor_lang::prelude::*;
+use std::ops::{Div, Mul};
 
 #[account]
 #[derive(InitSpace)]
 /// Fleet occupying (x, y) position. I
 pub struct Fleet {
-    owner: Pubkey,
-    is_present: bool,
+    pub owner: Pubkey,
+    pub is_present: bool,
     squadrons: [Option<Squadron>; 16],
 }
 
@@ -40,15 +33,20 @@ impl Fleet {
             owner: Pubkey::default(),
         }
     }
-    pub fn get_quote(&self, holding_buildings: [Building; 6]) -> Result<(u64, [u64; 4])> {
-        let mut quote: (u64, [u64; 4]) = (0, [0, 0, 0, 0]);
+
+    pub fn can_be_built(&self, holding_buildings: [Building; 6]) -> Result<()> {
         for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
-            let squadron_cost = squadron
-                .template
-                .get_quote(squadron.amount, holding_buildings)?;
-            quote = sum_costs(quote, multiply_costs(squadron_cost, squadron.amount as u64));
+            squadron.template.can_be_built(holding_buildings)?;
         }
-        Ok(quote)
+        Ok(())
+    }
+
+    pub fn get_quote(&self) -> ResourceCost {
+        let mut quote = ResourceCost::default();
+        for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
+            quote = quote.sum(squadron.template.get_quote(squadron.amount))
+        }
+        quote
     }
 
     pub fn get_move_quote(&self, (x_from, y_from): (u16, u16), (x_to, y_to): (u16, u16)) -> u64 {
@@ -288,12 +286,7 @@ impl ShipTemplate {
         };
         self.fleet_stats = FleetStats::from_modules(&self.modules);
     }
-    pub fn get_quote(
-        &self,
-        amount: u16,
-        holding_buildings: [Building; 6],
-    ) -> Result<(u64, [u64; 4])> {
-        let mut costs: (u64, [u64; 4]) = (0, [0, 0, 0, 0]);
+    pub fn can_be_built(&self, holding_buildings: [Building; 6]) -> Result<()> {
         for module in self
             .modules
             .iter()
@@ -301,13 +294,24 @@ impl ShipTemplate {
         {
             // Check if the module can be built
             module.module_type.can_be_built(holding_buildings)?;
-            // Calculate costs
-            let r_cost = module.module_type.get_quote(module.level)?;
-            let igt_cost =
-                convert_from_float(module.module_type.base_cost_igt(), mint_decimals::IGT);
-            costs = sum_costs(costs, multiply_costs((igt_cost, r_cost), amount as u64));
         }
-        Ok(costs)
+        Ok(())
+    }
+    pub fn get_quote(&self, amount: u16) -> ResourceCost {
+        let mut costs = ResourceCost::default();
+        for module in self
+            .modules
+            .iter()
+            .filter(|m| !m.module_type.eq(&ShipModuleType::None))
+        {
+            costs = costs.sum(
+                module
+                    .module_type
+                    .get_quote(module.level)
+                    .mul(amount as u64),
+            )
+        }
+        costs
     }
     pub fn get_move_quote(&self) -> u64 {
         let mut fuel_cost = 0u64;
@@ -383,26 +387,27 @@ impl ShipModuleType {
         Ok(())
     }
 
-    pub fn get_quote(&self, level: u8) -> Result<[u64; 4]> {
+    pub fn get_quote(&self, level: u8) -> ResourceCost {
         let base_cost = self.base_cost();
-        Ok([
-            convert_from_float(
+        ResourceCost {
+            igt: convert_from_float(self.base_cost_igt(), mint_decimals::IGT),
+            metal: convert_from_float(
                 calculate_upgrade_cost(base_cost[0], 1.6, level),
                 mint_decimals::METAL,
             ),
-            convert_from_float(
+            crystal: convert_from_float(
                 calculate_upgrade_cost(base_cost[1], 1.6, level),
                 mint_decimals::CRYSTAL,
             ),
-            convert_from_float(
+            chemical: convert_from_float(
                 calculate_upgrade_cost(base_cost[2], 1.6, level),
                 mint_decimals::CHEMICAL,
             ),
-            convert_from_float(
+            fuel: convert_from_float(
                 calculate_upgrade_cost(base_cost[3], 1.6, level),
                 mint_decimals::FUEL,
             ),
-        ])
+        }
     }
 
     pub fn base_cost(&self) -> [f32; 4] {

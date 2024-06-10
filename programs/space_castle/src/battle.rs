@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::fleet::{Fleet, ShipModule, ShipModuleType};
+use crate::{
+    building::ResourceCost,
+    fleet::{Fleet, ShipModule, ShipModuleType},
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum BattleSide {
@@ -23,15 +26,12 @@ pub enum Morale {
     Broken,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct BattleRound {
-    pub losses: [u16; 16],
-    pub retreats: [bool; 16],
-}
-
 #[account]
 pub struct BattleResult {
     pub winner: BattleSide,
+    pub rounds: [Option<(FleetBattleRound, FleetBattleRound)>; 16],
+    pub att_losses: ResourceCost,
+    pub def_losses: ResourceCost,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Default, Copy, Clone)]
@@ -132,27 +132,40 @@ impl Defenses {
     }
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Copy, Clone)]
 pub struct FleetBattleRound {
     pub losses: [u16; 16],
     pub morale: [Morale; 16],
     pub presence: [BattlePresence; 16],
 }
 
-pub fn simulate_battle(attacker: &Fleet, defender: &Fleet, r_factor: u8) -> BattleResult {
-    let attacker_fleet = &mut attacker.clone();
-    let defender_fleet = &mut attacker.clone();
-    let mut att_losses = [0u16; 16];
-    let mut def_losses = [0u16; 16];
-    while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() {
+pub fn simulate_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -> BattleResult {
+    let att_init_cost = attacker_fleet.get_quote();
+    let def_init_cost = defender_fleet.get_quote();
+    let mut round = 0;
+    let mut rounds: [Option<(FleetBattleRound, FleetBattleRound)>; 16] = [
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    ];
+    while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() || round <= 15 {
         let att_weapons = &attacker_fleet.get_battle_strength().weapons;
         let def_weapons = &defender_fleet.get_battle_strength().weapons;
-        let att_losses = attacker_fleet.take_loses(def_weapons);
-        let def_losses = defender_fleet.take_loses(att_weapons);
+        let att_round = attacker_fleet.take_loses(def_weapons);
+        let def_round = defender_fleet.take_loses(att_weapons);
+        rounds[round] = Some((att_round, def_round));
+        round += 1;
     }
     let winner = if attacker_fleet.in_retreat() {
         BattleSide::Defender
     } else {
         BattleSide::Attacker
     };
-    BattleResult { winner }
+    let att_new_cost = attacker_fleet.get_quote();
+    let def_new_cost = defender_fleet.get_quote();
+    BattleResult {
+        winner,
+        rounds,
+        att_losses: att_init_cost.sub(att_new_cost),
+        def_losses: def_init_cost.sub(def_new_cost),
+    }
 }
