@@ -1,30 +1,57 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Mint};
 use solana_program::clock::Clock;
-use crate::{planet::*, player::*, process_mint_chemical, process_mint_crystal, process_mint_fuel, process_mint_metal, resource::{ResourceAuthority, Resources}, seeds};
+use crate::{planet::*, player::*, process_mint_chemical, process_mint_crystal, process_mint_fuel, process_mint_metal, resource::ResourceAuthority, seeds};
 
 pub fn planet_harvest(ctx: Context<PlanetHarvest>, _x: u16, _y: u16) -> Result<()> {
-    let resources = Resources {
-        igt: 1,
-        metal: 1,
-        crystal: 1,
-        chemical: 1,
-        fuel: 1
-    }; 
-    resources.mint(&ctx.accounts.token_program, (
-        (&ctx.accounts.mint_igt, ctx.bumps.mint_igt),
-        (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-        (&ctx.accounts.mint_crystal, ctx.bumps.mint_crystal),
-        (&ctx.accounts.mint_chemical, ctx.bumps.mint_chemical),
-        (&ctx.accounts.mint_fuel, ctx.bumps.mint_fuel),
-
-    ), (
-        &ctx.accounts.igt_token_account,
-        &ctx.accounts.metal_token_account,
-        &ctx.accounts.crystal_token_account,
-        &ctx.accounts.chemical_token_account,
-        &ctx.accounts.fuel_token_account,
-    ))?; 
+    let resources = if ctx.accounts.planet_holding.last_harvest == 0 { 100u64 } else { 1u64 }; 
+    
+    // Give some initial supplies
+    process_mint_metal(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.metal_token_account,
+            (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
+            &ctx.accounts.mint_metal
+        ),
+        amount,
+    )?;
+    process_mint_crystal(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.crystal_token_account,
+            (&ctx.accounts.mint_crystal, ctx.bumps.mint_crystal),
+            &ctx.accounts.mint_crystal
+        ),
+        amount,
+    )?;
+    process_mint_chemical(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.chemical_token_account,
+            (&ctx.accounts.mint_chemical, ctx.bumps.mint_chemical),
+            &ctx.accounts.mint_chemical
+        ),
+        amount,
+    )?;
+    process_mint_fuel(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.fuel_token_account,
+            (&ctx.accounts.mint_fuel, ctx.bumps.mint_fuel),
+            &ctx.accounts.mint_fuel
+        ),
+        amount * 2,
+    )?;
+    process_mint_igt(
+        &ctx.accounts.token_program,
+        (
+            &ctx.accounts.fuel_token_account,
+            (&ctx.accounts.mint_fuel, ctx.bumps.mint_fuel),
+            &ctx.accounts.mint_fuel
+        ),
+        amount * 2,
+    )?;
 
     let planet_holding = &mut ctx.accounts.planet_holding;
     planet_holding.last_harvest = Clock::get()?.slot;

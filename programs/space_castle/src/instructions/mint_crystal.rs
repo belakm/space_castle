@@ -7,7 +7,7 @@ use anchor_spl::{
         CreateMetadataAccountsV3, Metadata,
     },
 };
-use crate::{resource::ResourceAuthority, seeds};
+use crate::{mint_decimals, resource::ResourceAuthority, seeds};
 
 pub fn mint_init_crystal(ctx: Context<MintInitCrystal>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CRYSTAL, &[ctx.bumps.mint]]];
@@ -49,8 +49,7 @@ pub fn mint_crystal(ctx: Context<MintCrystal>, amount: u64) -> Result<()> {
         (&ctx.accounts.mint, ctx.bumps.mint),
         &ctx.accounts.mint
     ),
-    amount,
-    ctx.accounts.mint.decimals)
+    amount)
 }
 
 pub fn process_mint_crystal<'info>(
@@ -61,7 +60,6 @@ pub fn process_mint_crystal<'info>(
         authority 
     ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
     amount: u64,
-    decimals: u8 
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CRYSTAL, &[mint_bump]]];
     token::mint_to(
@@ -74,7 +72,7 @@ pub fn process_mint_crystal<'info>(
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(decimals as u32),
+        amount * 10u64.pow(mint_decimals::CRYSTAL as u32),
     )
 }
 

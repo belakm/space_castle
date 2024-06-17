@@ -25,6 +25,7 @@ pub mod mint_decimals {
 
 pub mod seeds {
     pub const PLAYER: &[u8] = b"player";
+    pub const PLAYER_CACHE: &[u8] = b"player_cache";
     pub const PLANET_INFO: &[u8] = b"planet_info";
     pub const PLANET_HOLDING: &[u8] = b"planet_holding";
     pub const FLEET: &[u8] = b"fleet";
@@ -70,6 +71,9 @@ mod space_castle {
     pub fn player_create_resource_accounts_part2(
         ctx: Context<PlayerCreateResourceAccountsPart2>,
     ) -> Result<()> {
+        instructions::player_create_resource_accounts_part2(ctx)
+    }
+    pub fn player_take_stash(ctx: Context<PlayerCreateResourceAccountsPart2>) -> Result<()> {
         instructions::player_create_resource_accounts_part2(ctx)
     }
     ///

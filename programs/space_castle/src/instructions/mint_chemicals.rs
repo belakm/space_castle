@@ -8,7 +8,7 @@ use anchor_spl::{
     },
 };
 
-use crate::{resource::ResourceAuthority, seeds};
+use crate::{mint_decimals, resource::ResourceAuthority, seeds};
 
 pub fn mint_init_chemical(ctx: Context<MintInitChemical>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[ctx.bumps.mint]]];
@@ -50,8 +50,7 @@ pub fn mint_chemical(ctx: Context<MintChemical>, amount: u64) -> Result<()> {
         (&ctx.accounts.mint, ctx.bumps.mint),
         &ctx.accounts.mint
     ),
-    amount,
-    ctx.accounts.mint.decimals)
+    amount)
 }
 
 pub fn process_mint_chemical<'info>(
@@ -62,7 +61,6 @@ pub fn process_mint_chemical<'info>(
         authority 
     ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
     amount: u64,
-    decimals: u8 
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_CHEMICAL, &[mint_bump]]];
     token::mint_to(
@@ -75,7 +73,7 @@ pub fn process_mint_chemical<'info>(
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(decimals as u32),
+        amount * 10u64.pow(mint_decimals::CHEMICAL as u32),
     )
 }
 

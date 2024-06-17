@@ -55,6 +55,12 @@ describe('[Unit]: 🪐 Planet', () => {
     }
   })
 
+  // TODO: Add this test
+  it('TODO: Cant harvest planet if enough time hasnt passed', async () => {})
+
+  // TODO: Add this test
+  it('TODO: After N cycles, you can harvest again', async () => {})
+
   it('Planet has starting buildings', async () => {
     const holdings = await getHoldings(1, 3, playerWallet.publicKey, program)
     const hasAllTheRightBuildings =
@@ -112,4 +118,7 @@ describe('[Unit]: 🪐 Planet', () => {
       assert.ok("Couldn't settle second planet as first planet.")
     }
   })
+
+  // TODO: Add this test
+  it('TODO: Player cant harvest another players planet', async () => {})
 })

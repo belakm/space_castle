@@ -16,7 +16,11 @@ pub struct PlanetInfo {
 
 impl PlanetInfo {
     pub fn planet_affinity(&self) -> u8 {
-        return get_planet_affinity([self.metal, self.crystal, self.chemical, self.fuel]);
+        get_planet_affinity([self.metal, self.crystal, self.chemical, self.fuel])
+    }
+    /// Checks if the planet has a specific owner
+    pub fn is_owned_by(&self, owner: &Pubkey) -> bool {
+        self.owner.is_some_and(|o| o.eq(owner))
     }
 }
 
@@ -95,4 +99,6 @@ pub enum PlanetErrorCode {
     MaxOneFirstPlanet,
     #[msg("Invalid planet coordinates")]
     NoPlanetAtCoordinates,
+    #[msg("Not owner of this planet)")]
+    NoAuthority,
 }

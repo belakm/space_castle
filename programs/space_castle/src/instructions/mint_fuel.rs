@@ -7,7 +7,7 @@ use anchor_spl::{
         CreateMetadataAccountsV3, Metadata,
     },
 };
-use crate::{resource::ResourceAuthority, seeds};
+use crate::{mint_decimals, resource::ResourceAuthority, seeds};
 
 pub fn mint_init_fuel(ctx: Context<MintInitFuel>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[ctx.bumps.mint]]];
@@ -49,8 +49,8 @@ pub fn mint_fuel(ctx: Context<MintFuel>, amount: u64) -> Result<()> {
         (&ctx.accounts.mint, ctx.bumps.mint),
         &ctx.accounts.mint
     ),
-    amount,
-    ctx.accounts.mint.decimals)
+    amount
+    )
 }
 
 pub fn process_mint_fuel<'info>(
@@ -61,7 +61,6 @@ pub fn process_mint_fuel<'info>(
         authority 
     ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
     amount: u64,
-    decimals: u8 
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_FUEL, &[mint_bump]]];
     token::mint_to(
@@ -74,7 +73,7 @@ pub fn process_mint_fuel<'info>(
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(decimals as u32),
+        amount * 10u64.pow(mint_decimals::FUEL as u32),
     )
 }
 

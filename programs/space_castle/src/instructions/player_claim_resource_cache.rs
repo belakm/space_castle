@@ -1,17 +1,16 @@
+use crate::{
+    resource::{PlayerCache, ResourceAuthority},
+    seeds,
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use crate::{resource::ResourceAuthority, seeds};
 
-pub fn player_create_resource_accounts_part1(_ctx: Context<PlayerCreateResourceAccountsPart1>) -> Result<()> {
-    Ok(())
-}
-
-pub fn player_create_resource_accounts_part2(_ctx: Context<PlayerCreateResourceAccountsPart2>) -> Result<()> {
+pub fn player_claim_resource_cache(ctx: Context<PlayerClaimResourceCache>) -> Result<()> {
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct PlayerCreateResourceAccountsPart1<'info> {
+pub struct PlayerClaimResourceCache<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
@@ -19,7 +18,13 @@ pub struct PlayerCreateResourceAccountsPart1<'info> {
         seeds = [seeds::RESOURCE_AUTHORITY],
         bump
     )]
-    pub resource_authority: Account<'info, ResourceAuthority>,
+    pub resource_authority: Box<Account<'info, ResourceAuthority>>,
+    #[account(
+        mut,
+        seeds = [seeds::PLAYER_CACHE, signer.key().as_ref()],
+        bump,
+    )]
+    pub player_cache: Account<'info, PlayerCache>,
     #[account(
         mut,
         seeds = [seeds::MINT_METAL],
@@ -27,12 +32,9 @@ pub struct PlayerCreateResourceAccountsPart1<'info> {
     )]
     pub mint_metal: Account<'info, Mint>,
     #[account(
-        init,
-        payer = signer,
+        mut,
         seeds = [seeds::ACCOUNT_METAL, signer.key().as_ref()],
         bump,
-        token::mint = mint_metal, 
-        token::authority = resource_authority 
     )]
     pub metal_token_account: Account<'info, TokenAccount>,
     #[account(
@@ -40,31 +42,13 @@ pub struct PlayerCreateResourceAccountsPart1<'info> {
         seeds = [seeds::MINT_CRYSTAL],
         bump,
     )]
-    pub mint_crystal: Box<Account<'info, Mint>>,
-    #[account(
-        init,
-        payer = signer,
-        seeds = [seeds::ACCOUNT_CRYSTAL, signer.key().as_ref()],
-        bump,
-        token::mint = mint_crystal, 
-        token::authority = resource_authority 
-    )]
-    pub crystal_token_account: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
-
-
-#[derive(Accounts)]
-pub struct PlayerCreateResourceAccountsPart2<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
+    pub mint_crystal: Account<'info, Mint>,
     #[account(
         mut,
-        seeds = [seeds::RESOURCE_AUTHORITY],
-        bump
+        seeds = [seeds::ACCOUNT_CRYSTAL, signer.key().as_ref()],
+        bump,
     )]
-    pub resource_authority: Account<'info, ResourceAuthority>,
+    pub crystal_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [seeds::MINT_CHEMICAL],
@@ -72,12 +56,9 @@ pub struct PlayerCreateResourceAccountsPart2<'info> {
     )]
     pub mint_chemical: Account<'info, Mint>,
     #[account(
-        init,
-        payer = signer,
+        mut,
         seeds = [seeds::ACCOUNT_CHEMICAL, signer.key().as_ref()],
         bump,
-        token::mint = mint_chemical, 
-        token::authority = resource_authority 
     )]
     pub chemical_token_account: Account<'info, TokenAccount>,
     #[account(
@@ -87,12 +68,9 @@ pub struct PlayerCreateResourceAccountsPart2<'info> {
     )]
     pub mint_fuel: Account<'info, Mint>,
     #[account(
-        init,
-        payer = signer,
+        mut,
         seeds = [seeds::ACCOUNT_FUEL, signer.key().as_ref()],
         bump,
-        token::mint = mint_fuel, 
-        token::authority = resource_authority 
     )]
     pub fuel_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,

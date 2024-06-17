@@ -5,7 +5,7 @@ use anchor_spl::{
     }, token::{self, Burn, Mint, MintTo, Token, TokenAccount}
 };
 
-use crate::seeds;
+use crate::{mint_decimals, seeds};
 
 pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[ctx.bumps.mint]]];
@@ -40,18 +40,34 @@ pub fn mint_init_igt(ctx: Context<MintInitIGT>) -> Result<()> {
 }
 
 pub fn mint_igt(ctx: Context<MintIGT>, amount: u64) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[ctx.bumps.mint]]];
+    process_mint_igt(&ctx.accounts.token_program, (
+        &ctx.accounts.token_account,
+        (&ctx.accounts.mint, ctx.bumps.mint),
+        &ctx.accounts.mint
+    ), amount)
+}
+
+pub fn process_mint_igt<'info>(
+    token_program: &Program<'info, Token>,
+    (
+        to,
+        (mint, mint_bump),
+        authority 
+    ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
+    amount: u64,
+) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[mint_bump]]];
     token::mint_to(
         CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            token_program.to_account_info(),
             MintTo {
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.token_account.to_account_info(),
-                authority: ctx.accounts.mint.to_account_info(),
+                mint: mint.to_account_info(),
+                to: to.to_account_info(),
+                authority: mint.to_account_info(),
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(ctx.accounts.mint.decimals as u32),
+        amount * 10u64.pow(mint_decimals::IGT as u32),
     )
 }
 

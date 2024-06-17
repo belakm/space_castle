@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     mint_decimals,
+    resource::Resources,
     utilities::{calculate_upgrade_cost, convert_from_float},
 };
 
@@ -82,9 +83,9 @@ impl Building {
     /// A tuple where its params are quantities of resources each u16:
     /// * [`metal`, `crystal`, `chemical`, `fuel`]
     ///
-    pub fn calculate_upgrade_cost(&self) -> ResourceCost {
+    pub fn calculate_upgrade_cost(&self) -> Resources {
         let [metal, crystal, chemical, fuel] = self.base_upgrade_cost();
-        ResourceCost {
+        Resources {
             igt: 0,
             metal: convert_from_float(
                 calculate_upgrade_cost(metal, Building::UPGRADE_FACTOR, self.level),
@@ -135,64 +136,6 @@ impl BuildingType {
             "Shipyard" => Ok(BuildingType::Shipyard),
             "TradeBeacon" => Ok(BuildingType::TradeBeacon),
             _ => Err(BuildingErrorCode::BuildingKey.into()),
-        }
-    }
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
-pub struct ResourceCost {
-    pub igt: u64,
-    pub metal: u64,
-    pub crystal: u64,
-    pub chemical: u64,
-    pub fuel: u64,
-}
-
-impl ResourceCost {
-    pub fn by_key(&self, key: &str) -> u64 {
-        match key {
-            "metal" => self.metal,
-            "crystal" => self.crystal,
-            "chemical" => self.chemical,
-            "fuel" => self.fuel,
-            "igt" => self.igt,
-            _ => 0u64,
-        }
-    }
-    pub fn sum(&self, other: ResourceCost) -> ResourceCost {
-        ResourceCost {
-            igt: self.igt.saturating_add(other.igt),
-            metal: self.metal.saturating_add(other.metal),
-            crystal: self.crystal.saturating_add(other.crystal),
-            chemical: self.chemical.saturating_add(other.chemical),
-            fuel: self.fuel.saturating_add(other.fuel),
-        }
-    }
-    pub fn sub(&self, other: ResourceCost) -> ResourceCost {
-        ResourceCost {
-            igt: self.igt.saturating_sub(other.igt),
-            metal: self.metal.saturating_sub(other.metal),
-            crystal: self.crystal.saturating_sub(other.crystal),
-            chemical: self.chemical.saturating_sub(other.chemical),
-            fuel: self.fuel.saturating_sub(other.fuel),
-        }
-    }
-    pub fn div(&self, factor: u64) -> ResourceCost {
-        ResourceCost {
-            igt: self.igt.saturating_div(factor),
-            metal: self.metal.saturating_div(factor),
-            crystal: self.crystal.saturating_div(factor),
-            chemical: self.chemical.saturating_div(factor),
-            fuel: self.fuel.saturating_div(factor),
-        }
-    }
-    pub fn mul(&self, factor: u64) -> ResourceCost {
-        ResourceCost {
-            igt: self.igt.saturating_mul(factor),
-            metal: self.metal.saturating_mul(factor),
-            crystal: self.crystal.saturating_mul(factor),
-            chemical: self.chemical.saturating_mul(factor),
-            fuel: self.fuel.saturating_mul(factor),
         }
     }
 }

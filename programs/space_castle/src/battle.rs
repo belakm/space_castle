@@ -1,9 +1,11 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    building::ResourceCost,
-    fleet::{Fleet, ShipModule, ShipModuleType},
+    fleet::{Fleet, ShipModule, ShipModuleType, MODULES_ON_SHIP, SQUADRONS_IN_FLEET},
+    resource::Resources,
 };
+
+pub const MAX_ROUNDS: usize = 16;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum BattleSide {
@@ -26,12 +28,11 @@ pub enum Morale {
     Broken,
 }
 
-#[account]
 pub struct BattleResult {
     pub winner: BattleSide,
-    pub rounds: [Option<(FleetBattleRound, FleetBattleRound)>; 16],
-    pub att_losses: ResourceCost,
-    pub def_losses: ResourceCost,
+    pub rounds: [Option<(FleetBattleRound, FleetBattleRound)>; MAX_ROUNDS],
+    pub att_losses: Resources,
+    pub def_losses: Resources,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Default, Copy, Clone)]
@@ -41,7 +42,7 @@ pub struct FleetStats {
 }
 
 impl FleetStats {
-    pub fn from_modules(modules: &[ShipModule; 6]) -> Self {
+    pub fn from_modules(modules: &[ShipModule; MODULES_ON_SHIP]) -> Self {
         let mut weapons = Weapons {
             kinetic: 0,
             laser: 0,
@@ -132,18 +133,17 @@ impl Defenses {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Copy, Clone)]
 pub struct FleetBattleRound {
-    pub losses: [u16; 16],
-    pub morale: [Morale; 16],
-    pub presence: [BattlePresence; 16],
+    pub losses: [u16; SQUADRONS_IN_FLEET],
+    pub morale: [Morale; SQUADRONS_IN_FLEET],
+    pub presence: [BattlePresence; SQUADRONS_IN_FLEET],
 }
 
 pub fn simulate_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -> BattleResult {
     let att_init_cost = attacker_fleet.get_quote();
     let def_init_cost = defender_fleet.get_quote();
     let mut round = 0;
-    let mut rounds: [Option<(FleetBattleRound, FleetBattleRound)>; 16] = [
+    let mut rounds: [Option<(FleetBattleRound, FleetBattleRound)>; MAX_ROUNDS] = [
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
         None,
     ];

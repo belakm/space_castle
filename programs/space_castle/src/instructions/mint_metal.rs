@@ -8,7 +8,7 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount},
 };
 
-use crate::{resource::ResourceAuthority, seeds};
+use crate::{mint_decimals, resource::ResourceAuthority, seeds};
 
 pub fn mint_init_metal(ctx: Context<MintInitMetal>) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[ctx.bumps.mint]]];
@@ -50,8 +50,7 @@ pub fn mint_metal(ctx: Context<MintMetal>, amount: u64) -> Result<()> {
             (&ctx.accounts.mint, ctx.bumps.mint),
             &ctx.accounts.mint
         ),
-        amount,
-        ctx.accounts.mint.decimals
+        amount
     )
 }
 
@@ -63,7 +62,6 @@ pub fn process_mint_metal<'info>(
         authority 
     ): (&Account<'info, TokenAccount>, (&Account<'info, Mint>, u8), &Account<'info, Mint>),
     amount: u64,
-    decimals: u8 
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_METAL, &[mint_bump]]];
     token::mint_to(
@@ -76,7 +74,7 @@ pub fn process_mint_metal<'info>(
             },
         )
         .with_signer(signer_seeds),
-        amount * 10u64.pow(decimals as u32),
+        amount * 10u64.pow(mint_decimals::METAL as u32),
     )
 }
 

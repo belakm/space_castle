@@ -15,6 +15,7 @@ pub mod planet_building_new;
 pub mod planet_building_upgrade;
 pub mod planet_first_claim;
 pub mod planet_harvest;
+pub mod player_claim_resource_cache;
 pub mod player_create_resource_accounts;
 pub mod player_register;
 
@@ -36,4 +37,5 @@ pub use planet_building_upgrade::*;
 pub use planet_first_claim::*;
 pub use planet_harvest::*;
 pub use player_create_resource_accounts::*;
+pub use player_register::*;
 pub use player_register::*;

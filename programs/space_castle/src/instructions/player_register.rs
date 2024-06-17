@@ -3,7 +3,7 @@ use anchor_spl::{
     token::{self, Mint, MintTo, Token, TokenAccount}, 
     associated_token::AssociatedToken,
 };
-use crate::{player::{PlayerErrorCode, Player}, seeds};
+use crate::{player::{Player, PlayerErrorCode}, resource::PlayerCache, seeds};
 
 pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Result<()> {
     if player_name.as_bytes().len() > 32 {
@@ -54,12 +54,23 @@ pub struct PlayerRegister<'info> {
     )]
     pub mint: Account<'info, Mint>,
     #[account(
-        init_if_needed,
+        init,
         payer = signer,
         associated_token::mint = mint,
         associated_token::authority = signer 
     )]
     pub token_account: Account<'info, TokenAccount>,
+    #[account(
+        init,
+        payer = signer,
+        space = PlayerCache::INIT_SPACE,
+        seeds = [
+            seeds::PLAYER_CACHE,
+            signer.key().as_ref()
+        ],
+        bump
+    )]
+    pub player_cache: Account<'info, PlayerCache>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,

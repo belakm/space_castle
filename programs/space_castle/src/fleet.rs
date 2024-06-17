@@ -1,26 +1,29 @@
 use crate::{
     battle::{BattlePresence, Defenses, FleetBattleRound, FleetStats, Morale, Weapons},
-    building::{Building, BuildingType, ResourceCost},
+    building::{Building, BuildingType},
     mint_decimals,
+    resource::Resources,
     utilities::{calculate_upgrade_cost, convert_from_float},
 };
 use anchor_lang::prelude::*;
 use std::ops::{Div, Mul};
 
+pub const SQUADRONS_IN_FLEET: usize = 16;
+pub const MODULES_ON_SHIP: usize = 8;
+
 #[account]
 #[derive(InitSpace)]
-/// Fleet occupying (x, y) position. I
+/// Fleet occupying (x, y) position
 pub struct Fleet {
     pub owner: Pubkey,
     pub is_present: bool,
-    squadrons: [Option<Squadron>; 16],
+    squadrons: [Option<Squadron>; SQUADRONS_IN_FLEET],
 }
 
 impl Fleet {
     pub fn convert_to_starting_fleet(&mut self, affinity: u8) -> Self {
-        let mut squadrons = [None; 16];
-        let mut template = ShipTemplate::default();
-        template.starting_ship(affinity);
+        let mut squadrons = [None; SQUADRONS_IN_FLEET];
+        let template = starting_ship(affinity);
         squadrons[0] = Some(Squadron {
             template,
             amount: 3,
@@ -36,15 +39,15 @@ impl Fleet {
 
     pub fn can_be_built(&self, holding_buildings: [Building; 6]) -> Result<()> {
         for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
-            squadron.template.can_be_built(holding_buildings)?;
+            ship_can_be_built(squadron.template, holding_buildings)?;
         }
         Ok(())
     }
 
-    pub fn get_quote(&self) -> ResourceCost {
-        let mut quote = ResourceCost::default();
+    pub fn get_quote(&self) -> Resources {
+        let mut quote = Resources::default();
         for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
-            quote = quote.sum(squadron.template.get_quote(squadron.amount))
+            quote = quote.sum(ship_quote(&squadron.template, squadron.amount))
         }
         quote
     }
@@ -54,7 +57,7 @@ impl Fleet {
             (((x_to - x_from).saturating_pow(2) + (y_to - y_from).saturating_pow(2)) as f32).sqrt();
         let mut quote = 0u64;
         for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
-            quote += (squadron.template.get_move_quote() as f32).mul(distance) as u64;
+            quote += (ship_move_quote(&squadron.template) as f32).mul(distance) as u64;
         }
         quote
     }
@@ -69,7 +72,7 @@ impl Fleet {
     pub fn reset(&mut self) {
         self.is_present = false;
         self.owner = Pubkey::default();
-        self.squadrons = [None; 16];
+        self.squadrons = [None; SQUADRONS_IN_FLEET];
     }
 
     /// Checks if the fleet is there, used for determining whether PDA on x,y is
@@ -87,17 +90,17 @@ impl Fleet {
     pub fn get_battle_strength(&self) -> FleetStats {
         let mut fleet_stats = FleetStats::default();
         for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
-            let squadron_stats = squadron.template.fleet_stats;
+            let squadron_stats = FleetStats::from_modules(&squadron.template);
             let Defenses {
                 armor,
                 shield,
                 hull,
-            } = squadron_stats.defenses;
+            } = squadron_stats.defenses.multiply(squadron.amount);
             let Weapons {
                 kinetic,
                 laser,
                 explosive,
-            } = squadron_stats.weapons;
+            } = squadron_stats.weapons.multiply(squadron.amount);
             fleet_stats.defenses.armor += armor;
             fleet_stats.defenses.shield += shield;
             fleet_stats.defenses.hull += hull;
@@ -110,9 +113,9 @@ impl Fleet {
 
     /// Takes losses and returns morale adjustment
     pub fn take_loses(&mut self, attack: &Weapons) -> FleetBattleRound {
-        let mut losses = [0u16; 16];
-        let mut morale = [Morale::Normal; 16];
-        let mut presence = [BattlePresence::Active; 16];
+        let mut losses = [0u16; SQUADRONS_IN_FLEET];
+        let mut morale = [Morale::Normal; SQUADRONS_IN_FLEET];
+        let mut presence = [BattlePresence::Active; SQUADRONS_IN_FLEET];
         for (index, squadron) in self.squadrons.iter().enumerate() {
             if squadron.is_none() {
                 morale[index] = Morale::Broken;
@@ -163,7 +166,7 @@ impl Fleet {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
 pub struct Squadron {
-    template: ShipTemplate,
+    template: [ShipModule; MODULES_ON_SHIP], // Aka ShipTemplate
     amount: u16,
     morale: Morale,
     presence: BattlePresence,
@@ -171,11 +174,12 @@ pub struct Squadron {
 
 impl Squadron {
     pub fn take_damage(&mut self, weapons: &Weapons) -> (u16, Morale) {
+        let fleet_stats = FleetStats::from_modules(&self.template);
         let Defenses {
             armor,
             shield,
             hull,
-        } = self.template.fleet_stats.defenses.multiply(self.amount);
+        } = fleet_stats.defenses.multiply(self.amount);
         let total_health: i128 = armor as i128 + shield as i128 + hull as i128;
         let mut shield = shield as i128;
         let mut armor = armor as i128;
@@ -266,69 +270,64 @@ fn without_modifier(damage: i128, weapon: u8, surface: u8) -> i128 {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
-pub struct ShipTemplate {
-    modules: [ShipModule; 6],
-    is_warship: bool,
-    fleet_stats: FleetStats,
-}
+pub type ShipTemplate = [ShipModule; MODULES_ON_SHIP];
 
-impl ShipTemplate {
-    pub fn starting_ship(&mut self, affinity: u8) {
-        self.modules = [ShipModule::default(); 6];
-        self.modules[0] = ShipModule {
-            module_type: ShipModuleType::MiningDrill,
-            level: 1,
-        };
-        self.modules[1] = ShipModule {
-            module_type: ShipModuleType::weapon_from_affinity(affinity),
-            level: 1,
-        };
-        self.fleet_stats = FleetStats::from_modules(&self.modules);
+pub fn starting_ship(affinity: u8) -> ShipTemplate {
+    let mut template = [ShipModule::default(); MODULES_ON_SHIP];
+    template[0] = ShipModule {
+        module_type: ShipModuleType::MiningDrill,
+        level: 1,
+    };
+    template[1] = ShipModule {
+        module_type: ShipModuleType::weapon_from_affinity(affinity),
+        level: 1,
+    };
+    template
+}
+pub fn ship_can_be_built(template: ShipTemplate, holding_buildings: [Building; 6]) -> Result<()> {
+    for module in template
+        .iter()
+        .filter(|m| !m.module_type.eq(&ShipModuleType::None))
+    {
+        // Check if the module can be built
+        module.module_type.can_be_built(holding_buildings)?;
     }
-    pub fn can_be_built(&self, holding_buildings: [Building; 6]) -> Result<()> {
-        for module in self
-            .modules
-            .iter()
-            .filter(|m| !m.module_type.eq(&ShipModuleType::None))
-        {
-            // Check if the module can be built
-            module.module_type.can_be_built(holding_buildings)?;
-        }
-        Ok(())
+    Ok(())
+}
+pub fn ship_quote(template: &ShipTemplate, amount: u16) -> Resources {
+    let mut costs = Resources::default();
+    for module in template
+        .iter()
+        .filter(|m| !m.module_type.eq(&ShipModuleType::None))
+    {
+        costs = costs.sum(
+            module
+                .module_type
+                .get_quote(module.level)
+                .mul(amount as u64),
+        )
     }
-    pub fn get_quote(&self, amount: u16) -> ResourceCost {
-        let mut costs = ResourceCost::default();
-        for module in self
-            .modules
-            .iter()
-            .filter(|m| !m.module_type.eq(&ShipModuleType::None))
-        {
-            costs = costs.sum(
-                module
-                    .module_type
-                    .get_quote(module.level)
-                    .mul(amount as u64),
-            )
-        }
-        costs
+    costs
+}
+pub fn ship_move_quote(template: &ShipTemplate) -> u64 {
+    let mut fuel_cost = 0u64;
+    for module in template
+        .iter()
+        .filter(|m| !m.module_type.eq(&ShipModuleType::None))
+    {
+        fuel_cost = fuel_cost.saturating_add(module.level as u64);
     }
-    pub fn get_move_quote(&self) -> u64 {
-        let mut fuel_cost = 0u64;
-        for module in self
-            .modules
-            .iter()
-            .filter(|m| !m.module_type.eq(&ShipModuleType::None))
-        {
-            fuel_cost = fuel_cost.saturating_add(module.level as u64);
-        }
-        fuel_cost
-    }
-    pub fn default_morale(&self) -> Morale {
-        match self.is_warship {
-            true => Morale::Normal,
-            false => Morale::Broken,
-        }
+    fuel_cost
+}
+pub fn default_morale(template: ShipTemplate) -> Morale {
+    match template.iter().any(|m| {
+        matches!(
+            m.module_type,
+            ShipModuleType::Lasers | ShipModuleType::Rockets | ShipModuleType::MachineGun
+        )
+    }) {
+        true => Morale::Normal,
+        false => Morale::Broken,
     }
 }
 
@@ -387,9 +386,9 @@ impl ShipModuleType {
         Ok(())
     }
 
-    pub fn get_quote(&self, level: u8) -> ResourceCost {
+    pub fn get_quote(&self, level: u8) -> Resources {
         let base_cost = self.base_cost();
-        ResourceCost {
+        Resources {
             igt: convert_from_float(self.base_cost_igt(), mint_decimals::IGT),
             metal: convert_from_float(
                 calculate_upgrade_cost(base_cost[0], 1.6, level),

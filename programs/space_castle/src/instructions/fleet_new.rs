@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{ Mint, Token, TokenAccount };
-use crate::{building::{BuildingType, ResourceCost}, fleet::{Fleet, FleetErrorCode}, planet::*, process_burn_igt, resource::{burn_resources, ResourceAuthority}, seeds };
+use crate::{building::BuildingType, fleet::{Fleet, FleetErrorCode}, planet::*, process_burn_igt, resource::{burn_resources, ResourceAuthority}, seeds };
 
 pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
     let shipyard = ctx.accounts.planet_holding.buildings.iter_mut().find(|b| b.building_type == BuildingType::Shipyard);
