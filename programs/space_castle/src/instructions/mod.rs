@@ -38,4 +38,3 @@ pub use planet_first_claim::*;
 pub use planet_harvest::*;
 pub use player_create_resource_accounts::*;
 pub use player_register::*;
-pub use player_register::*;

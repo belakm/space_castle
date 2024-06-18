@@ -63,19 +63,29 @@ mod space_castle {
     pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Result<()> {
         instructions::player_register(ctx, player_name)
     }
-    pub fn player_create_resource_accounts_part1(
-        ctx: Context<PlayerCreateResourceAccountsPart1>,
+    pub fn player_create_resource_account_metal(
+        ctx: Context<PlayerCreateResourceAccountMetal>,
     ) -> Result<()> {
-        instructions::player_create_resource_accounts_part1(ctx)
+        instructions::player_create_resource_account_metal(ctx)
     }
-    pub fn player_create_resource_accounts_part2(
-        ctx: Context<PlayerCreateResourceAccountsPart2>,
+    pub fn player_create_resource_account_crystal(
+        ctx: Context<PlayerCreateResourceAccountCrystal>,
     ) -> Result<()> {
-        instructions::player_create_resource_accounts_part2(ctx)
+        instructions::player_create_resource_account_crystal(ctx)
     }
-    pub fn player_take_stash(ctx: Context<PlayerCreateResourceAccountsPart2>) -> Result<()> {
-        instructions::player_create_resource_accounts_part2(ctx)
+    pub fn player_create_resource_account_chemical(
+        ctx: Context<PlayerCreateResourceAccountChemical>,
+    ) -> Result<()> {
+        instructions::player_create_resource_account_chemical(ctx)
     }
+    pub fn player_create_resource_account_fuel(
+        ctx: Context<PlayerCreateResourceAccountFuel>,
+    ) -> Result<()> {
+        instructions::player_create_resource_account_fuel(ctx)
+    }
+    // pub fn player_take_stash(ctx: Context<PlayerTakeStash>) -> Result<()> {
+    //     instructions::player_take_stash(ctx)
+    // }
     ///
     /// Planet
     ///

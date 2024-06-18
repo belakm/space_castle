@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use solana_program::blake3::hashv;
 
-use crate::building::Building;
+use crate::{building::Building, resource::Resources};
 
 #[account]
 #[derive(InitSpace)]

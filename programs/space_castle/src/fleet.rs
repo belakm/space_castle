@@ -8,8 +8,8 @@ use crate::{
 use anchor_lang::prelude::*;
 use std::ops::{Div, Mul};
 
-pub const SQUADRONS_IN_FLEET: usize = 16;
-pub const MODULES_ON_SHIP: usize = 8;
+pub const SQUADRONS_IN_FLEET: usize = 10;
+pub const MODULES_ON_SHIP: usize = 6;
 
 #[account]
 #[derive(InitSpace)]

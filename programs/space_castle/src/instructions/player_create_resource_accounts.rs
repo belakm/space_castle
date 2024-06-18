@@ -2,16 +2,21 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use crate::{resource::ResourceAuthority, seeds};
 
-pub fn player_create_resource_accounts_part1(_ctx: Context<PlayerCreateResourceAccountsPart1>) -> Result<()> {
+pub fn player_create_resource_account_metal(_ctx: Context<PlayerCreateResourceAccountMetal>) -> Result<()> {
     Ok(())
 }
-
-pub fn player_create_resource_accounts_part2(_ctx: Context<PlayerCreateResourceAccountsPart2>) -> Result<()> {
+pub fn player_create_resource_account_crystal(_ctx: Context<PlayerCreateResourceAccountCrystal>) -> Result<()> {
+    Ok(())
+}
+pub fn player_create_resource_account_chemical(_ctx: Context<PlayerCreateResourceAccountChemical>) -> Result<()> {
+    Ok(())
+}
+pub fn player_create_resource_account_fuel(_ctx: Context<PlayerCreateResourceAccountFuel>) -> Result<()> {
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct PlayerCreateResourceAccountsPart1<'info> {
+pub struct PlayerCreateResourceAccountMetal<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
@@ -35,6 +40,20 @@ pub struct PlayerCreateResourceAccountsPart1<'info> {
         token::authority = resource_authority 
     )]
     pub metal_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct PlayerCreateResourceAccountCrystal<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [seeds::RESOURCE_AUTHORITY],
+        bump
+    )]
+    pub resource_authority: Account<'info, ResourceAuthority>,
     #[account(
         mut,
         seeds = [seeds::MINT_CRYSTAL],
@@ -54,9 +73,8 @@ pub struct PlayerCreateResourceAccountsPart1<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[derive(Accounts)]
-pub struct PlayerCreateResourceAccountsPart2<'info> {
+pub struct PlayerCreateResourceAccountChemical<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
@@ -80,6 +98,20 @@ pub struct PlayerCreateResourceAccountsPart2<'info> {
         token::authority = resource_authority 
     )]
     pub chemical_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct PlayerCreateResourceAccountFuel<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [seeds::RESOURCE_AUTHORITY],
+        bump
+    )]
+    pub resource_authority: Account<'info, ResourceAuthority>,
     #[account(
         mut,
         seeds = [seeds::MINT_FUEL],

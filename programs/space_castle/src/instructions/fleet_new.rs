@@ -28,15 +28,15 @@ pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
             &ctx.accounts.account_chemical, 
             &ctx.accounts.account_fuel
         )
-    )?;
-    process_burn_igt(&ctx.accounts.token_program, (
-        // from
-        &ctx.accounts.account_igt,
-        // mint
-        &ctx.accounts.mint_igt,
-        // authority
-        &ctx.accounts.mint_igt
-    ), quote.igt)
+    )
+    // process_burn_igt(&ctx.accounts.token_program, (
+    //     // from
+    //     &ctx.accounts.account_igt,
+    //     // mint
+    //     &ctx.accounts.mint_igt,
+    //     // authority
+    //     &ctx.accounts.mint_igt
+    // ), quote.igt)
 }
 
 #[derive(Accounts)]
@@ -88,8 +88,8 @@ pub struct FleetNew<'info> {
     pub resource_authority: Account<'info, ResourceAuthority>,
 
     // Mints
-    #[account(mut, seeds = [seeds::MINT_IGT], bump)]
-    pub mint_igt: Account<'info, Mint>,
+    // #[account(mut, seeds = [seeds::MINT_IGT], bump)]
+    // pub mint_igt: Account<'info, Mint>,
     #[account(mut, seeds = [seeds::MINT_METAL], bump)]
     pub mint_metal: Account<'info, Mint>,
     #[account(mut, seeds = [seeds::MINT_CHEMICAL], bump)]
@@ -100,12 +100,12 @@ pub struct FleetNew<'info> {
     pub mint_fuel: Account<'info, Mint>,
 
     // User resource token accounts
-    #[account(
-        mut,
-        associated_token::mint = mint_igt,
-        associated_token::authority = signer 
-    )]
-    pub account_igt: Account<'info, TokenAccount>,
+    // #[account(
+    //     mut,
+    //     associated_token::mint = mint_igt,
+    //     associated_token::authority = signer 
+    // )]
+    // pub account_igt: Account<'info, TokenAccount>,
     #[account(mut, seeds = [seeds::ACCOUNT_METAL, signer.key().as_ref()], bump)]
     pub account_metal: Account<'info, TokenAccount>,
     #[account(mut, seeds = [seeds::ACCOUNT_CRYSTAL, signer.key().as_ref()], bump)]
