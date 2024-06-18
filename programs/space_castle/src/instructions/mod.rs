@@ -36,5 +36,6 @@ pub use planet_building_new::*;
 pub use planet_building_upgrade::*;
 pub use planet_first_claim::*;
 pub use planet_harvest::*;
+pub use player_claim_resource_cache::*;
 pub use player_create_resource_accounts::*;
 pub use player_register::*;

@@ -83,10 +83,10 @@ mod space_castle {
     ) -> Result<()> {
         instructions::player_create_resource_account_fuel(ctx)
     }
-    // pub fn player_take_stash(ctx: Context<PlayerTakeStash>) -> Result<()> {
-    //     instructions::player_take_stash(ctx)
-    // }
-    ///
+    pub fn player_claim_resource_cache(ctx: Context<PlayerClaimResourceCache>) -> Result<()> {
+        instructions::player_claim_resource_cache(ctx)
+    }
+
     /// Planet
     ///
     /// Planet - First planet claim for new users

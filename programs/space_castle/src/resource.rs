@@ -23,6 +23,15 @@ pub struct Resources {
 }
 
 impl Resources {
+    pub fn reset(&mut self) -> Self {
+        Self {
+            igt: 0,
+            metal: 0,
+            crystal: 0,
+            chemical: 0,
+            fuel: 0,
+        }
+    }
     pub fn by_key(&self, key: &str) -> u64 {
         match key {
             "metal" => self.metal,
