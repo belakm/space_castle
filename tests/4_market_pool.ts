@@ -135,26 +135,26 @@ describe('[Unit] 💱 Market pool', () => {
             payResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)
               : PublicKey.findProgramAddressSync(
-                [
-                  Buffer.from('account_' + payResource.mintKey),
-                  playerWallet.publicKey.toBuffer(),
-                ],
-                program.programId,
-              )[0]
+                  [
+                    Buffer.from('account_' + payResource.mintKey),
+                    playerWallet.publicKey.toBuffer(),
+                  ],
+                  program.programId,
+                )[0]
 
           const payerReceiveTokenAccount =
             receiveResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(
-                receiveMint,
-                playerWallet.publicKey,
-              )
+                  receiveMint,
+                  playerWallet.publicKey,
+                )
               : PublicKey.findProgramAddressSync(
-                [
-                  Buffer.from('account_' + receiveResource.mintKey),
-                  playerWallet.publicKey.toBuffer(),
-                ],
-                program.programId,
-              )[0]
+                  [
+                    Buffer.from('account_' + receiveResource.mintKey),
+                    playerWallet.publicKey.toBuffer(),
+                  ],
+                  program.programId,
+                )[0]
 
           const poolPayTokenAccount = getAssociatedTokenAddressSync(
             payMint,

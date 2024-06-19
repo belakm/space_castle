@@ -52,14 +52,28 @@ describe('[Unit]: 👨 Player', () => {
 
   it('Activate resource accounts for player', async () => {
     await program.methods
-      .playerCreateResourceAccountsPart1()
+      .playerCreateResourceAccountMetal()
       .accounts({
         signer: playerWallet.publicKey,
       })
       .signers([playerWallet])
       .rpc()
     await program.methods
-      .playerCreateResourceAccountsPart2()
+      .playerCreateResourceAccountCrystal()
+      .accounts({
+        signer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountChemical()
+      .accounts({
+        signer: playerWallet.publicKey,
+      })
+      .signers([playerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountFuel()
       .accounts({
         signer: playerWallet.publicKey,
       })
@@ -101,14 +115,28 @@ describe('[Unit]: 👨 Player', () => {
       .signers([secondPlayerWallet])
       .rpc()
     await program.methods
-      .playerCreateResourceAccountsPart1()
+      .playerCreateResourceAccountMetal()
       .accounts({
         signer: secondPlayerWallet.publicKey,
       })
       .signers([secondPlayerWallet])
       .rpc()
     await program.methods
-      .playerCreateResourceAccountsPart2()
+      .playerCreateResourceAccountCrystal()
+      .accounts({
+        signer: secondPlayerWallet.publicKey,
+      })
+      .signers([secondPlayerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountChemical()
+      .accounts({
+        signer: secondPlayerWallet.publicKey,
+      })
+      .signers([secondPlayerWallet])
+      .rpc()
+    await program.methods
+      .playerCreateResourceAccountFuel()
       .accounts({
         signer: secondPlayerWallet.publicKey,
       })

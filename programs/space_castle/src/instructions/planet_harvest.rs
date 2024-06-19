@@ -86,6 +86,7 @@ pub struct PlanetHarvest<'info> {
         token::authority = resource_authority 
     )]
     pub metal_token_account:Account<'info, TokenAccount>,
+    
     // Crystal
     #[account(
         mut,

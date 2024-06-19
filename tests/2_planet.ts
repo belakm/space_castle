@@ -1,10 +1,11 @@
 import * as anchor from '@coral-xyz/anchor'
 import { type Program } from '@coral-xyz/anchor'
 import { type SpaceCastle } from '../target/types/space_castle'
-import { Keypair } from '@solana/web3.js'
+import { Keypair, PublicKey } from '@solana/web3.js'
 import { assert } from 'chai'
 import { getPlayerBalances, resourceKeys, usePlayer } from './utils/player'
 import { getHoldings, hasBuilding } from './utils/planet'
+import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 
 describe('[Unit]: 🪐 Planet', () => {
   const provider = anchor.AnchorProvider.env()
@@ -12,6 +13,10 @@ describe('[Unit]: 🪐 Planet', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   let playerWallet: Keypair
   let secondPlayerWallet: Keypair
+  const [mintIGT] = PublicKey.findProgramAddressSync(
+    [Buffer.from('mint_igt')],
+    program.programId,
+  )
 
   before('Prepare wallet and player accounts', async () => {
     playerWallet = await usePlayer(1)
@@ -32,10 +37,15 @@ describe('[Unit]: 🪐 Planet', () => {
   })
 
   it('Player is awarded a token amount of resources when harvesting for the first time', async () => {
+    const tokenAccount = getAssociatedTokenAddressSync(
+      mintIGT,
+      secondPlayerWallet.publicKey,
+    )
     await program.methods
       .planetHarvest(1, 3)
       .accounts({
         signer: playerWallet.publicKey,
+        igtTokenAccount: tokenAccount,
       })
       .signers([playerWallet])
       .rpc()
