@@ -90,12 +90,10 @@ describe('[Unit] 💱 Market pool', () => {
         [Buffer.from('mint_' + resource.mintKey)],
         program.programId,
       )
-      const ata = getAssociatedTokenAddressSync(mint[0], poolAddress, true)
       await program.methods
         .marketPoolMintTo(new anchor.BN(resource.quantity), resource.mintKey)
         .accounts({
           mint: mint[0],
-          poolTokenAccount: ata,
           payer: payer.publicKey,
         })
         .signers([payer])
@@ -127,10 +125,7 @@ describe('[Unit] 💱 Market pool', () => {
             [Buffer.from('mint_' + receiveResource.mintKey)],
             program.programId,
           )
-          const [pool] = PublicKey.findProgramAddressSync(
-            [Buffer.from('market_pool')],
-            program.programId,
-          )
+
           const payerPayTokenAccount =
             payResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)
@@ -156,17 +151,6 @@ describe('[Unit] 💱 Market pool', () => {
                   program.programId,
                 )[0]
 
-          const poolPayTokenAccount = getAssociatedTokenAddressSync(
-            payMint,
-            pool,
-            true,
-          )
-          const poolReceiveTokenAccount = getAssociatedTokenAddressSync(
-            receiveMint,
-            pool,
-            true,
-          )
-
           await program.methods
             .marketPoolSwap(
               new anchor.BN(quantity),
@@ -174,8 +158,6 @@ describe('[Unit] 💱 Market pool', () => {
             )
             .accounts({
               payer: playerWallet.publicKey,
-              poolPayTokenAccount,
-              poolReceiveTokenAccount,
               payerPayTokenAccount,
               payerReceiveTokenAccount,
               payMint,

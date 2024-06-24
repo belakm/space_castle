@@ -21,7 +21,7 @@ describe('[Unit]: 🏰 Buildings', () => {
   let latestHolding: Awaited<ReturnType<typeof getHoldings>>
 
   before('Prepare wallet and player account', async () => {
-    playerWallet = await usePlayer(1)
+    playerWallet = (await usePlayer(1, program.programId)).keypair
     latestBalance = await getPlayerBalances(
       playerWallet,
       program.programId,
@@ -58,7 +58,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     )
     const diff = balanceDiff(lastBalance, latestBalance)
     if (diff.fuel === 0) {
-      assert.fail('Looks like no resources were used up.')
+      return assert.fail('Looks like no resources were used up.')
     }
   })
 
@@ -90,7 +90,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     )
     const diff = balanceDiff(lastBalance, latestBalance)
     if (diff.fuel === 0) {
-      assert.fail('Looks like no resources were used up.')
+      return assert.fail('Looks like no resources were used up.')
     }
   })
 
@@ -140,7 +140,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     )
     const diff = balanceDiff(lastBalance, latestBalance)
     if (diff.fuel === 0) {
-      assert.fail('Looks like no resources were used up.')
+      return assert.fail('Looks like no resources were used up.')
     }
   })
 })

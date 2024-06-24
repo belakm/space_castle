@@ -156,7 +156,7 @@ describe('[Unit]: 🚀 Fleet', () => {
       .signers([secondPlayerWallet.keypair])
       .rpc()
       .catch(() => {
-        return assert.ok('Cant move')
+        return assert.ok("Can't move")
       })
     return assert.fail('Could move fleet without right authority')
   })

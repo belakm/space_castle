@@ -97,8 +97,8 @@ describe('[Unit]: 🪐 Planet', () => {
       player_cache.resources.chemical.toNumber() > 0 &&
       player_cache.resources.fuel.toNumber() > 0
     ) {
-      assert.ok('Player received all resources')
-    } else assert.fail('Player did not receive all resources')
+      return assert.ok('Player received all resources')
+    } else return assert.fail('Player did not receive all resources')
   })
 
   it('Player can claim Player Cache (it has resources granted by claiming first planet)', async () => {
@@ -134,9 +134,9 @@ describe('[Unit]: 🪐 Planet', () => {
         diff.chemical > 0 &&
         diff.fuel > 0
       ) {
-        assert.ok('Got resources')
+        return assert.ok('Got resources')
       } else {
-        assert.fail('Not all resources were given')
+        return assert.fail('Not all resources were given')
       }
     } catch (e) {
       return assert.fail(e)
@@ -144,7 +144,7 @@ describe('[Unit]: 🪐 Planet', () => {
   })
 
   // TODO: Add this test
-  it('TODO: Cant harvest planet if enough time hasnt passed', async () => {})
+  it("TODO: Can't harvest planet if enough time hasnt passed", async () => {})
 
   // TODO: Add this test
   it('TODO: After enough slots passed, you can harvest again', async () => {})
@@ -163,7 +163,7 @@ describe('[Unit]: 🪐 Planet', () => {
         hasBuilding(holdings, 'metalIndustry') ||
         hasBuilding(holdings, 'chemicalRefinery'))
     if (!hasAllTheRightBuildings) {
-      assert.fail(`Missing the three starter buildings`)
+      return assert.fail(`Missing the three starter buildings`)
     }
   })
 
@@ -176,12 +176,12 @@ describe('[Unit]: 🪐 Planet', () => {
         })
         .signers([playerWallet.keypair])
         .rpc()
-      assert.fail('Could settle second planet as first planet.')
+      return assert.fail('Could settle second planet as first planet.')
     } catch {
-      assert.ok("Couldn't settle second planet as first planet.")
+      return assert.ok("Couldn't settle second planet as first planet.")
     }
   })
 
   // TODO: Add this test
-  it('TODO: Player cant harvest another players planet', async () => {})
+  it("TODO: Player can't harvest another player's planet", async () => {})
 })

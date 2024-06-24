@@ -1,5 +1,7 @@
 import { type Program } from '@coral-xyz/anchor'
 import { SpaceCastle } from '../../target/types/space_castle'
+import * as anchor from '@coral-xyz/anchor'
+import { PublicKey } from '@solana/web3.js'
 
 const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
 
@@ -59,4 +61,36 @@ export const constructShipModule = (type: ShipModuleName, level: number) => {
     moduleType: module,
     level,
   }
+}
+
+export type Fleet = Awaited<ReturnType<typeof getFleet>>
+
+export async function getFleet(
+  x: number,
+  y: number,
+  publicKey: PublicKey,
+  program: anchor.Program<SpaceCastle>,
+) {
+  const xBuffer = Buffer.alloc(2) // Allocate 2 bytes for u16
+  const yBuffer = Buffer.alloc(2)
+  xBuffer.writeUInt16LE(x, 0) // Little-endian format
+  yBuffer.writeUInt16LE(y, 0)
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('fleet'), xBuffer, yBuffer, publicKey.toBuffer()],
+    program.programId,
+  )
+  const fleet = await program.account.fleet.fetch(pda)
+  return fleet
+}
+
+export const fleetSufferedLosses = (before: Fleet, after: Fleet) => {
+  const amountsBefore = before.squadrons.reduce(
+    (amount, squadron) => (amount += squadron?.amount ?? 0),
+    0,
+  )
+  const amountsAfter = after.squadrons.reduce(
+    (amount, squadron) => (amount += squadron?.amount ?? 0),
+    0,
+  )
+  return amountsAfter !== amountsBefore
 }
