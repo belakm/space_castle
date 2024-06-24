@@ -129,8 +129,13 @@ mod space_castle {
     /// Fleet
     ///
     /// Create a new fleet at (x, y)
-    pub fn fleet_new(ctx: Context<FleetNew>, _x: u16, _y: u16) -> Result<()> {
-        instructions::fleet_new(ctx)
+    pub fn fleet_new(
+        ctx: Context<FleetNew>,
+        _x: u16,
+        _y: u16,
+        template: [Option<fleet::SquadronBlueprint>; fleet::SQUADRONS_IN_FLEET],
+    ) -> Result<()> {
+        instructions::fleet_new(ctx, template)
     }
     /// Move a fleet to (x, y)
     pub fn fleet_move(

@@ -8,6 +8,7 @@ import {
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs'
 import { ResourceKey } from './resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
+import { SpaceCastle } from '../../target/types/space_castle'
 
 const path = 'tests/.wallets'
 
@@ -34,19 +35,60 @@ export function clearPlayers() {
   }
 }
 
-export async function usePlayer(index: number): Promise<Keypair> {
+export interface PlayerInfo {
+  keypair: Keypair
+  account_igt: PublicKey
+  account_metal: PublicKey
+  account_crystal: PublicKey
+  account_chemical: PublicKey
+  account_fuel: PublicKey
+}
+
+export async function usePlayer(
+  index: number,
+  programId: PublicKey,
+): Promise<PlayerInfo> {
   let keypair: Keypair
+
+  // Check if player wallet is already stored
   if (!existsSync(path_to_file(index))) {
+    // if its not, create a new wallet and store info to file
     keypair = await createAndFundWallet()
     writeFileSync(
       `${path}/wallet-${index}.json`,
       JSON.stringify(Array.from(keypair.secretKey)),
     )
   } else {
+    // Player wallet exists, just parse it
     keypair = parseWallet(index)
   }
-  // console.log(`\tUsing player ${index}: ${keypair.publicKey}`)
-  return keypair
+
+  const [mintIGT] = PublicKey.findProgramAddressSync(
+    [Buffer.from('mint_igt')],
+    programId,
+  )
+  const account_igt = getAssociatedTokenAddressSync(mintIGT, keypair.publicKey)
+
+  return {
+    keypair,
+    account_igt,
+    account_metal: PublicKey.findProgramAddressSync(
+      [Buffer.from('account_metal'), keypair.publicKey.toBuffer()],
+      programId,
+    )[0],
+    account_crystal: PublicKey.findProgramAddressSync(
+      [Buffer.from('account_crystal'), keypair.publicKey.toBuffer()],
+      programId,
+    )[0],
+    account_chemical: PublicKey.findProgramAddressSync(
+      [Buffer.from('account_chemical'), keypair.publicKey.toBuffer()],
+      programId,
+    )[0],
+    account_fuel: PublicKey.findProgramAddressSync(
+      [Buffer.from('account_fuel'), keypair.publicKey.toBuffer()],
+      programId,
+    )[0],
+  }
 }
 
 function path_to_file(index: number) {
@@ -113,4 +155,16 @@ export function balanceDiff(a: PlayerBalances, b: PlayerBalances) {
     diff[r] = (a[r] || 0) - (b[r] || 0)
   }
   return diff
+}
+
+export async function getPlayerCache(
+  publicKey: PublicKey,
+  program: anchor.Program<SpaceCastle>,
+) {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('player_cache'), publicKey.toBuffer()],
+    program.programId,
+  )
+  const player_cache = await program.account.playerCache.fetch(pda)
+  return player_cache
 }

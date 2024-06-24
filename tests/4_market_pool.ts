@@ -66,7 +66,7 @@ describe('[Unit] 💱 Market pool', () => {
   before(
     'Prepare wallets and fund mock player wallet with resources',
     async () => {
-      playerWallet = await usePlayer(1)
+      playerWallet = (await usePlayer(1, program.programId)).keypair
       // mintAllResourcesToAddress(playerWallet)
     },
   )

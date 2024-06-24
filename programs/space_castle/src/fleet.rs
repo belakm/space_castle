@@ -8,7 +8,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use std::ops::{Div, Mul};
 
-pub const SQUADRONS_IN_FLEET: usize = 10;
+pub const SQUADRONS_IN_FLEET: usize = 9;
 pub const MODULES_ON_SHIP: usize = 6;
 
 #[account]
@@ -165,6 +165,12 @@ impl Fleet {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
+pub struct SquadronBlueprint {
+    template: [ShipModule; MODULES_ON_SHIP], // Aka ShipTemplate
+    amount: u16,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
 pub struct Squadron {
     template: [ShipModule; MODULES_ON_SHIP], // Aka ShipTemplate
     amount: u16,
@@ -241,6 +247,14 @@ impl Squadron {
         };
         self.amount = new_amount;
         (losses, morale)
+    }
+    pub fn from_blueprint(blueprint: SquadronBlueprint) -> Self {
+        Self {
+            template: blueprint.template,
+            amount: blueprint.amount,
+            morale: Morale::Normal,
+            presence: BattlePresence::Active,
+        }
     }
 }
 

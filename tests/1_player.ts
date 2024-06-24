@@ -19,8 +19,8 @@ describe('[Unit]: 👨 Player', () => {
   )
 
   before('Prepare players', async () => {
-    playerWallet = await usePlayer(1)
-    secondPlayerWallet = await usePlayer(2)
+    playerWallet = (await usePlayer(1, program.programId)).keypair
+    secondPlayerWallet = (await usePlayer(2, program.programId)).keypair
   })
 
   it('New player can be created', async () => {
@@ -39,13 +39,13 @@ describe('[Unit]: 👨 Player', () => {
   })
 
   it('New player gets a token amount of iGT', async () => {
-    const holdings = await getPlayerBalances(
+    const balances = await getPlayerBalances(
       playerWallet,
       program.programId,
       provider,
       'igt',
     )
-    if (!holdings.igt || holdings.igt <= 0) {
+    if (!balances.igt || balances.igt <= 0) {
       return assert.fail("Player wasn't credited")
     }
   })

@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{ Mint, Token, TokenAccount };
-use crate::{building::BuildingType, fleet::{Fleet, FleetErrorCode}, planet::*, process_burn_igt, resource::{burn_resources, ResourceAuthority}, seeds };
+use crate::{building::BuildingType, fleet::{Fleet, FleetErrorCode, Squadron, SquadronBlueprint, SQUADRONS_IN_FLEET}, planet::*, process_burn_igt, resource::{burn_resources, ResourceAuthority}, seeds };
 
-pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
+pub fn fleet_new(ctx: Context<FleetNew>, template: [Option<SquadronBlueprint>; SQUADRONS_IN_FLEET]) -> Result<()> {
     let shipyard = ctx.accounts.planet_holding.buildings.iter_mut().find(|b| b.building_type == BuildingType::Shipyard);
     if shipyard.is_none() {
         return Err(FleetErrorCode::NoShipyardOnPlanet.into())
@@ -38,9 +38,8 @@ pub fn fleet_new(ctx: Context<FleetNew>) -> Result<()> {
     //     &ctx.accounts.mint_igt
     // ), quote.igt)
 }
-
 #[derive(Accounts)]
-#[instruction(x: u16, y: u16)]
+#[instruction(x: u16, y: u16, template: [Option<Squadron>; SQUADRONS_IN_FLEET])]
 pub struct FleetNew<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,

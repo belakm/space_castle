@@ -51,6 +51,13 @@ impl Resources {
             fuel: self.fuel.saturating_add(other.fuel),
         }
     }
+    pub fn add(&mut self, other: Resources) {
+        self.igt += other.igt;
+        self.metal += other.metal;
+        self.crystal += other.crystal;
+        self.chemical += other.chemical;
+        self.fuel += other.fuel;
+    }
     pub fn sub(&self, other: Resources) -> Resources {
         Resources {
             igt: self.igt.saturating_sub(other.igt),

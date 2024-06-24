@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::{building::generate_initial_buildings_for_planet, planet::*, player::*, seeds, fleet::*};
+use crate::{building::generate_initial_buildings_for_planet, fleet::*, planet::*, player::*, resource::{PlayerCache, Resources}, seeds};
 
 pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Result<()> {
     // CHECK IF PLANET ACTUALLY EXISTS
@@ -37,6 +37,16 @@ pub fn planet_first_claim(ctx: Context<PlanetFirstClaim>, x: u16, y: u16) -> Res
     // Create one initial fleet for the player 
     let initial_fleet = &mut ctx.accounts.initial_fleet;
     initial_fleet.convert_to_starting_fleet(planet_affinity);
+
+    // Give player some resources to cache
+    let cache = &mut ctx.accounts.player_cache;
+    cache.resources.add(Resources {
+        igt: 10,
+        metal: 10,
+        crystal: 10,
+        chemical: 10,
+        fuel: 10
+    });
 
     Ok(())
 }
@@ -89,5 +99,14 @@ pub struct PlanetFirstClaim<'info> {
         bump,
     )]
     pub player_info: Account<'info, Player>,
+    #[account(
+        mut,
+        seeds = [
+            seeds::PLAYER_CACHE,
+            signer.key().as_ref()
+        ],
+        bump
+    )]
+    pub player_cache: Account<'info, PlayerCache>,
     pub system_program: Program<'info, System>,
  }
