@@ -76,26 +76,6 @@ pub fn process_mint_crystal<'info>(
     )
 }
 
-pub fn process_burn_crystal<'info>(
-    token_program: &Program<'info, Token>,
-    (
-        from,
-        mint,
-        (authority, authority_bump)
-    ): (&Account<'info, TokenAccount>, &Account<'info, Mint>, (&Account<'info, ResourceAuthority>, u8)),
-    amount: u64
-) -> Result<()>{
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::RESOURCE_AUTHORITY, &[authority_bump]]];
-    let cpi_accounts = Burn {
-        mint: mint.to_account_info(),
-        from: from.to_account_info(),
-        authority: authority.to_account_info(),
-    };
-    let cpi_program = token_program.to_account_info();
-    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-    token::burn(cpi_ctx, amount)
-}
-
 #[derive(Accounts)]
 pub struct MintInitCrystal<'info> {
     #[account(mut)]

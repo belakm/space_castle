@@ -16,12 +16,12 @@ pub const MODULES_ON_SHIP: usize = 6;
 /// Fleet occupying (x, y) position
 pub struct Fleet {
     pub owner: Pubkey,
-    pub is_present: bool,
+    is_present: bool,
     squadrons: [Option<Squadron>; SQUADRONS_IN_FLEET],
 }
 
 impl Fleet {
-    pub fn convert_to_starting_fleet(&mut self, affinity: u8) -> Self {
+    pub fn convert_to_starting_fleet(&mut self, affinity: u8, owner: Pubkey) {
         let mut squadrons = [None; SQUADRONS_IN_FLEET];
         let template = starting_ship(affinity);
         squadrons[0] = Some(Squadron {
@@ -30,11 +30,9 @@ impl Fleet {
             morale: Morale::Normal,
             presence: BattlePresence::Active,
         });
-        Self {
-            squadrons,
-            is_present: true,
-            owner: Pubkey::default(),
-        }
+        self.squadrons = squadrons;
+        self.is_present = true;
+        self.owner = owner
     }
 
     pub fn can_be_built(&self, holding_buildings: [Building; 6]) -> Result<()> {
@@ -56,7 +54,7 @@ impl Fleet {
         let distance =
             (((x_to - x_from).saturating_pow(2) + (y_to - y_from).saturating_pow(2)) as f32).sqrt();
         let mut quote = 0u64;
-        for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
+        for squadron in self.squadrons.into_iter().flatten() {
             quote += (ship_move_quote(&squadron.template) as f32).mul(distance) as u64;
         }
         quote
@@ -89,7 +87,7 @@ impl Fleet {
     /// Gets fleet's battle stats
     pub fn get_battle_strength(&self) -> FleetStats {
         let mut fleet_stats = FleetStats::default();
-        for squadron in self.squadrons.iter().filter_map(|s| s.as_ref()) {
+        for squadron in self.squadrons.into_iter().flatten() {
             let squadron_stats = FleetStats::from_modules(&squadron.template);
             let Defenses {
                 armor,
@@ -112,39 +110,41 @@ impl Fleet {
     }
 
     /// Takes losses and returns morale adjustment
-    pub fn take_loses(&mut self, attack: &Weapons) -> FleetBattleRound {
+    pub fn take_losses(&mut self, attack: &Weapons) -> FleetBattleRound {
         let mut losses = [0u16; SQUADRONS_IN_FLEET];
-        let mut morale = [Morale::Normal; SQUADRONS_IN_FLEET];
-        let mut presence = [BattlePresence::Active; SQUADRONS_IN_FLEET];
+        let mut morale = [Morale::Broken; SQUADRONS_IN_FLEET];
+        let mut presence = [BattlePresence::Gone; SQUADRONS_IN_FLEET];
+        let mut active_squadrons: u8 = 0;
         for (index, squadron) in self.squadrons.iter().enumerate() {
-            if squadron.is_none() {
-                morale[index] = Morale::Broken;
-                presence[index] = BattlePresence::Gone;
+            if let Some(squadron) = squadron {
+                morale[index] = squadron.morale;
+                presence[index] = squadron.presence;
+                if !squadron.presence.eq(&BattlePresence::Gone) {
+                    active_squadrons += 1;
+                }
             }
         }
         // Calc how much dmg per squadron
-        let active_squadrons = self
-            .squadrons
-            .iter()
-            .filter_map(|s| s.as_ref())
-            .filter(|s| !s.presence.eq(&BattlePresence::Gone));
-        let dmg = attack.divide(active_squadrons.count() as u8);
+        let dmg = attack.divide(active_squadrons);
         for (index, squadron) in self.squadrons.iter_mut().enumerate() {
             if let Some(squadron) = squadron {
-                let is_retreating = squadron.morale.eq(&Morale::Broken);
                 if squadron.presence.eq(&BattlePresence::Gone) {
                     continue;
                 }
+                let is_retreating = squadron.morale.eq(&Morale::Broken);
                 let (loss, new_morale) = squadron.take_damage(&dmg);
                 morale[index] = new_morale;
                 losses[index] += loss;
-                presence[index] = if is_retreating {
+                presence[index] = if is_retreating || squadron.amount == 0 {
                     BattlePresence::Gone
                 } else if new_morale.eq(&Morale::Broken) {
                     BattlePresence::Retreating
                 } else {
                     BattlePresence::Active
-                }
+                };
+                squadron.morale = new_morale;
+                squadron.amount = squadron.amount.saturating_sub(loss);
+                squadron.presence = presence[index];
             }
         }
         FleetBattleRound {
@@ -157,10 +157,34 @@ impl Fleet {
     pub fn in_retreat(&self) -> bool {
         self.squadrons
             .iter()
-            .filter_map(|m| m.as_ref())
+            .flatten()
             .filter(|m| !m.presence.eq(&BattlePresence::Gone))
             .count()
             == 0
+    }
+
+    pub fn build_from_template(
+        &mut self,
+        fleet_template: [Option<SquadronBlueprint>; SQUADRONS_IN_FLEET],
+    ) {
+        let mut full_squadrons = [None; SQUADRONS_IN_FLEET];
+        for (index, template_squadron) in fleet_template.iter().enumerate() {
+            if let Some(squadron) = template_squadron {
+                full_squadrons[index] = Some(Squadron {
+                    amount: squadron.amount,
+                    template: squadron.template,
+                    presence: BattlePresence::Active,
+                    morale: Morale::Normal,
+                })
+            }
+        }
+        self.squadrons = full_squadrons
+    }
+
+    pub fn replace_with_another_fleet(&mut self, new_fleet: &Fleet) {
+        self.owner = new_fleet.owner;
+        self.squadrons = new_fleet.squadrons;
+        self.is_present = new_fleet.is_present;
     }
 }
 
@@ -234,7 +258,7 @@ impl Squadron {
             }
         }
         if hull <= 0 {
-            return (self.amount, Morale::Broken);
+            return (0, Morale::Broken);
         };
         let remainder_health = shield.saturating_add(armor).saturating_add(hull);
         let ratio_of_surviving_ships: f32 = (remainder_health as f32).div(total_health as f32);
@@ -245,6 +269,7 @@ impl Squadron {
         } else {
             Morale::Broken
         };
+        self.morale = morale;
         self.amount = new_amount;
         (losses, morale)
     }

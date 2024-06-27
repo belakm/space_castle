@@ -78,22 +78,6 @@ pub fn process_mint_metal<'info>(
     )
 }
 
-pub fn process_burn_metal<'info>(
-    token_program: &Program<'info, Token>,
-    (
-        from,
-        mint,
-        (authority, authority_bump) 
-    ): (&Account<'info, TokenAccount>, &Account<'info, Mint>, (&Account<'info, ResourceAuthority>, u8)),
-    amount: u64
-) -> Result<()>{
-    token::burn(CpiContext::new_with_signer(token_program.to_account_info(), Burn {
-        from: from.to_account_info(),
-        mint: mint.to_account_info(),
-        authority: authority.to_account_info(),
-    }, &[&[seeds::RESOURCE_AUTHORITY, &[authority_bump]]]), amount)
-}
-
 #[derive(Accounts)]
 pub struct MintInitMetal<'info> {
     #[account(mut)]

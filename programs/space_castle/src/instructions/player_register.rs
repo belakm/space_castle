@@ -63,7 +63,7 @@ pub struct PlayerRegister<'info> {
     #[account(
         init,
         payer = signer,
-        space = PlayerCache::INIT_SPACE,
+        space = 8 + PlayerCache::INIT_SPACE,
         seeds = [
             seeds::PLAYER_CACHE,
             signer.key().as_ref()

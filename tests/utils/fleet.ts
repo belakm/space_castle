@@ -29,25 +29,34 @@ export type ShipModuleName = keyof ShipModuleType['moduleType']
 export const createSimpleFleetTemplate = () =>
   constructFleet([
     [
-      [
+      padShipModules([
         ['machineGun', 1],
         ['machineGun', 1],
         ['machineGun', 1],
-      ],
+      ]),
       3,
     ],
   ])
 
+export const padShipModules = (shipModules: Array<[ShipModuleName, number]>) =>
+  shipModules.concat(
+    Array(6 - shipModules.length).fill(['none' as ShipModuleName, 0]),
+  )
+
 export const constructFleet = (
   squadrons: [[ShipModuleName, number][], number][],
 ) => {
-  return squadrons.map(
+  const full_squadrons = squadrons.map(
     ([ship, amount]) =>
       ({
         amount,
         template: constructShip(ship),
       }) as SquadronBlueprint,
   ) as FleetBlueprint
+  const padded_squadrons = full_squadrons.concat(
+    Array(9 - full_squadrons.length).fill(null),
+  ) as FleetBlueprint
+  return padded_squadrons
 }
 
 export const constructShip = (modules: [ShipModuleName, number][]) => {
@@ -68,7 +77,6 @@ export type Fleet = Awaited<ReturnType<typeof getFleet>>
 export async function getFleet(
   x: number,
   y: number,
-  publicKey: PublicKey,
   program: anchor.Program<SpaceCastle>,
 ) {
   const xBuffer = Buffer.alloc(2) // Allocate 2 bytes for u16
@@ -76,11 +84,36 @@ export async function getFleet(
   xBuffer.writeUInt16LE(x, 0) // Little-endian format
   yBuffer.writeUInt16LE(y, 0)
   const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('fleet'), xBuffer, yBuffer, publicKey.toBuffer()],
+    [Buffer.from('fleet'), xBuffer, yBuffer],
     program.programId,
   )
-  const fleet = await program.account.fleet.fetch(pda)
-  return fleet
+  try {
+    const fleet = await program.account.fleet.fetch(pda)
+    return Promise.resolve(fleet)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+export const printFleet = (fleet: Fleet) => {
+  console.log('------------ FLEET -------------')
+  console.log(`  Present: ${fleet.isPresent}`)
+  console.log(`  Owner: ${fleet.owner}`)
+  console.log(`  Composition: `)
+  fleet.squadrons.forEach((squadron, index) => {
+    if (squadron) {
+      const modules = squadron.template.reduce(
+        (modules, module) =>
+          module.moduleType.none
+            ? modules
+            : `${modules}${modules === '' ? '' : ' | '}${Object.keys(module.moduleType)[0]} lvl. ${module.level}`,
+        '',
+      )
+      console.log(`    Squadron ${index}`)
+      console.log(`      ${modules}`)
+    }
+  })
+  console.log('')
 }
 
 export const fleetSufferedLosses = (before: Fleet, after: Fleet) => {
@@ -93,4 +126,16 @@ export const fleetSufferedLosses = (before: Fleet, after: Fleet) => {
     0,
   )
   return amountsAfter !== amountsBefore
+}
+
+export const fleetKey = (x: number, y: number) => {
+  const xBuffer2 = Buffer.alloc(2) // Allocate 2 bytes for u16
+  const yBuffer2 = Buffer.alloc(2)
+  xBuffer2.writeUInt16LE(x, 0) // Little-endian format
+  yBuffer2.writeUInt16LE(y, 0)
+  const [fleet] = PublicKey.findProgramAddressSync(
+    [Buffer.from('fleet'), xBuffer2, yBuffer2],
+    program.programId,
+  )
+  return fleet
 }

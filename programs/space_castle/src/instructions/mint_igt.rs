@@ -63,7 +63,7 @@ pub fn process_mint_igt<'info>(
             MintTo {
                 mint: mint.to_account_info(),
                 to: to.to_account_info(),
-                authority: mint.to_account_info(),
+                authority: authority.to_account_info(),
             },
         )
         .with_signer(signer_seeds),

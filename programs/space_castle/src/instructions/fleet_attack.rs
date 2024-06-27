@@ -1,8 +1,7 @@
 use crate::{
     battle::{simulate_battle, BattleResult, BattleSide},
     fleet::{Fleet, FleetErrorCode},
-    process_burn_fuel,
-    resource::{PlayerCache, ResourceAuthority},
+    resource::{process_burn_resource, PlayerCache, ResourceAuthority},
     seeds,
 };
 use anchor_lang::prelude::*;
@@ -12,8 +11,8 @@ pub fn fleet_attack(
     ctx: Context<FleetAttack>,
     x: u16,
     y: u16,
-    move_to_x: u16,
-    move_to_y: u16,
+    target_x: u16,
+    target_y: u16,
 ) -> Result<()> {
     let fleet = &mut ctx.accounts.fleet;
     let fleet_target = &mut ctx.accounts.fleet_target;
@@ -37,7 +36,7 @@ pub fn fleet_attack(
     winner_player_cache.resources = winner_player_cache.resources.sum(resource_gain);
 
     // Burn fuel of the attacker
-    process_burn_fuel(
+    process_burn_resource(
         &ctx.accounts.token_program,
         (
             &ctx.accounts.account_fuel,
@@ -47,12 +46,12 @@ pub fn fleet_attack(
                 ctx.bumps.resource_authority,
             ),
         ),
-        fleet.get_move_quote((x, y), (move_to_x, move_to_y)),
+        fleet.get_move_quote((x, y), (target_x, target_y)),
     )
 }
 
 #[derive(Accounts)]
-#[instruction(x: u16, y: u16, move_to_x: u16, move_to_y: u16)]
+#[instruction(x: u16, y: u16, target_x: u16, target_y: u16)]
 pub struct FleetAttack<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -60,6 +59,7 @@ pub struct FleetAttack<'info> {
     #[account(
         mut,
         seeds = [
+            seeds::FLEET,
             x.to_le_bytes().as_ref(),
             y.to_le_bytes().as_ref()
         ],
@@ -72,8 +72,9 @@ pub struct FleetAttack<'info> {
     #[account(
         mut,
         seeds = [
-            x.to_le_bytes().as_ref(),
-            y.to_le_bytes().as_ref()
+            seeds::FLEET,
+            target_x.to_le_bytes().as_ref(),
+            target_y.to_le_bytes().as_ref()
         ],
         bump,
         constraint = fleet_target.is_present() @ FleetErrorCode::FleetNotPresent,

@@ -1,14 +1,13 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{self, Burn, Mint, Token, TokenAccount};
 
 use crate::{
-    mint_decimals, process_burn_chemical, process_burn_crystal, process_burn_fuel,
-    process_burn_metal, process_mint_chemical, process_mint_crystal, process_mint_fuel,
-    process_mint_igt, process_mint_metal,
+    process_mint_chemical, process_mint_crystal, process_mint_fuel, process_mint_igt,
+    process_mint_metal, seeds,
 };
 
-#[derive(InitSpace)]
 #[account]
+#[derive(InitSpace)]
 pub struct PlayerCache {
     pub resources: Resources,
 }
@@ -171,7 +170,7 @@ pub fn burn_resources<'info>(
         }
         match mint_key {
             "metal" => {
-                process_burn_metal(
+                process_burn_resource(
                     token_program,
                     (
                         account_metal,
@@ -182,7 +181,7 @@ pub fn burn_resources<'info>(
                 )?;
             }
             "crystal" => {
-                process_burn_crystal(
+                process_burn_resource(
                     token_program,
                     (
                         account_crystal,
@@ -193,7 +192,7 @@ pub fn burn_resources<'info>(
                 )?;
             }
             "chemical" => {
-                process_burn_chemical(
+                process_burn_resource(
                     token_program,
                     (
                         account_chemical,
@@ -204,7 +203,7 @@ pub fn burn_resources<'info>(
                 )?;
             }
             "fuel" => {
-                process_burn_fuel(
+                process_burn_resource(
                     token_program,
                     (
                         account_fuel,
@@ -218,4 +217,24 @@ pub fn burn_resources<'info>(
         }
     }
     Ok(())
+}
+
+pub fn process_burn_resource<'info>(
+    token_program: &Program<'info, Token>,
+    (from, mint, (authority, authority_bump)): (
+        &Account<'info, TokenAccount>,
+        &Account<'info, Mint>,
+        (&Account<'info, ResourceAuthority>, u8),
+    ),
+    amount: u64,
+) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[seeds::RESOURCE_AUTHORITY, &[authority_bump]]];
+    let cpi_accounts = Burn {
+        mint: mint.to_account_info(),
+        from: from.to_account_info(),
+        authority: authority.to_account_info(),
+    };
+    let cpi_program = token_program.to_account_info();
+    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+    token::burn(cpi_ctx, amount)
 }

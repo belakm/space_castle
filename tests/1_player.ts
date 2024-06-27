@@ -5,7 +5,7 @@ import { Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
 import { getPlayerBalances, usePlayer } from './utils/player'
 
-describe('[Unit]: 👨 Player', () => {
+describe('[Unit]: 🤠 Player', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   const provider = anchor.AnchorProvider.env()
   let playerWallet: Keypair
@@ -70,18 +70,19 @@ describe('[Unit]: 👨 Player', () => {
       .rpc()
   })
 
-  it("Player can't have a name too long", async () => {
-    await program.methods
-      .playerRegister('123456789012345678901234567890123')
-      .accounts({
-        signer: secondPlayerWallet.publicKey,
-      })
-      .signers([playerWallet])
-      .rpc()
-      .catch(() => {
-        return assert.fail('32 max length for name doesnt work >:(')
-      })
-    return assert.ok('32 max length is working ok:)')
+  it("Player can't have a name longer than 32 characters", async () => {
+    try {
+      await program.methods
+        .playerRegister('123456789012345678901234567890123')
+        .accounts({
+          signer: secondPlayerWallet.publicKey,
+        })
+        .signers([playerWallet])
+        .rpc()
+      return assert.fail('32 max length for name is not respected')
+    } catch (e) {
+      return assert.ok('32 max length is working ok')
+    }
   })
 
   it('Another Player', async () => {

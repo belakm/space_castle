@@ -22,5 +22,5 @@ pub fn convert_from_float(value: f32, decimals: u8) -> u64 {
 
 /// Calculates upgrade cost with a growth factor so the upgrading costs a bit more each level
 pub fn calculate_upgrade_cost(base_cost: f32, growth_factor: f32, level: u8) -> f32 {
-    base_cost * (growth_factor.powf((level - 1) as f32))
+    base_cost * (growth_factor.powf((level.saturating_sub(1)) as f32))
 }

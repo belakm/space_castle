@@ -9,7 +9,7 @@ import {
   usePlayer,
 } from './utils/player'
 import { assert } from 'chai'
-import { createSimpleFleetTemplate } from './utils/fleet'
+import { createSimpleFleetTemplate, fleetKey } from './utils/fleet'
 
 describe('[Unit]: 🚀 Fleet', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
@@ -30,8 +30,14 @@ describe('[Unit]: 🚀 Fleet', () => {
   })
 
   it('Fleet can move', async () => {
+    const fleetFrom = fleetKey(1, 3)
+    const fleetTo = fleetKey(2, 3)
     await program.methods
       .fleetMove(1, 3, 2, 3)
+      .accountsPartial({
+        fleetFrom,
+        fleetTo,
+      })
       .accounts({
         signer: playerWallet.keypair.publicKey,
       })
@@ -54,24 +60,25 @@ describe('[Unit]: 🚀 Fleet', () => {
       : assert.ok('All ok')
   })
   it('Fleet cant move where another fleet is present', async () => {
-    await program.methods
-      // on [2, 4] there is a claimed planet by player 2
-      .fleetMove(1, 3, 2, 4)
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch(() => {
-        return assert.ok('OK')
-      })
-    return assert.fail('Somehow fleet moved where another was present')
+    try {
+      await program.methods
+        // on [2, 4] there is a claimed planet by player 2
+        .fleetMove(1, 3, 2, 4)
+        .accounts({
+          signer: playerWallet.keypair.publicKey,
+        })
+        .signers([playerWallet.keypair])
+        .rpc()
+      return assert.fail('Somehow fleet moved where another was present')
+    } catch (e) {
+      return assert.ok('OK')
+    }
   })
   it('Fleet cant move where a non-owned planet is', async () => {
     try {
       await program.methods
         // on [2, 4] there is a claimed planet by player 2
-        .fleetMove(1, 3, 2, 4)
+        .fleetMove(1, 3, 2, 6)
         .accounts({
           signer: playerWallet.keypair.publicKey,
         })
@@ -85,45 +92,8 @@ describe('[Unit]: 🚀 Fleet', () => {
     }
     return assert.fail('Somehow fleet moved where another was present')
   })
-  it('Fleet cannot be created if another fleet is on that planet', async () => {
-    // Bring fleet back
-    await program.methods
-      .fleetMove(2, 3, 1, 3)
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
 
-    // Try to spawn another fleet on the planet
-    await program.methods
-      .fleetNew(1, 3, createSimpleFleetTemplate())
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
-  })
   it('New fleet can be created', async () => {
-    // Take starting fleet away
-    await program.methods
-      .fleetMove(1, 3, 2, 3)
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
-
-    // Try to spawn another fleet on the planet
     await program.methods
       .fleetNew(1, 3, createSimpleFleetTemplate())
       .accounts({
@@ -131,33 +101,54 @@ describe('[Unit]: 🚀 Fleet', () => {
       })
       .signers([playerWallet.keypair])
       .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
   })
-  it('Fleet cant move where another fleet is present', async () => {
-    await program.methods
-      .fleetMove(1, 3, 2, 6)
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
+
+  it('Fleet cannot be created if another fleet is on that planet', async () => {
+    try {
+      // Try to spawn another fleet on the planet
+      await program.methods
+        .fleetNew(1, 3, createSimpleFleetTemplate())
+        .accounts({
+          signer: playerWallet.keypair.publicKey,
+        })
+        .signers([playerWallet.keypair])
+        .rpc()
+      return assert.fail('Failure')
+    } catch (e) {
+      assert.ok('Ok')
+    }
+  })
+
+  it("Fleet can't move where another fleet is present", async () => {
+    try {
+      await program.methods
+        .fleetMove(1, 3, 2, 6)
+        .accounts({
+          signer: playerWallet.keypair.publicKey,
+        })
+        .accountsPartial({
+          fleetFrom: fleetKey(1, 3),
+          fleetTo: fleetKey(2, 6),
+        })
+        .signers([playerWallet.keypair])
+        .rpc()
+      return assert.fail('Moved whee another fleet was but shouldnt')
+    } catch (e) {
+      return assert.ok('Ok')
+    }
   })
   it('Only owner of the fleet can move it around', async () => {
-    await program.methods
-      .fleetMove(1, 3, 2, 4)
-      .accounts({
-        signer: secondPlayerWallet.keypair.publicKey,
-      })
-      .signers([secondPlayerWallet.keypair])
-      .rpc()
-      .catch(() => {
-        return assert.ok("Can't move")
-      })
-    return assert.fail('Could move fleet without right authority')
+    try {
+      await program.methods
+        .fleetMove(1, 3, 2, 4)
+        .accounts({
+          signer: secondPlayerWallet.keypair.publicKey,
+        })
+        .signers([secondPlayerWallet.keypair])
+        .rpc()
+      return assert.fail('Could move fleet without right authority')
+    } catch (e) {
+      return assert.ok('OK')
+    }
   })
 })

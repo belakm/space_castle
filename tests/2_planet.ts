@@ -45,7 +45,7 @@ describe('[Unit]: 🪐 Planet', () => {
     }
   })
 
-  it('Player with no planets can claim the first planet', async () => {
+  it('Player one with no planets can claim the first planet for free', async () => {
     // Player 1
     await program.methods
       .planetFirstClaim(1, 3)
@@ -57,20 +57,9 @@ describe('[Unit]: 🪐 Planet', () => {
       .catch((e) => {
         return assert.fail(e)
       })
-
-    await program.methods
-      .planetFirstClaim(2, 6)
-      .accounts({
-        signer: secondPlayerWallet.keypair.publicKey,
-      })
-      .signers([secondPlayerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
   })
 
-  it("Can't claim already claimed planet", async () => {
+  it("Player two can't claim already claimed planet", async () => {
     try {
       await program.methods
         .planetFirstClaim(1, 3)
@@ -83,6 +72,20 @@ describe('[Unit]: 🪐 Planet', () => {
     } catch {
       return assert.ok("Can't claim an already claimed planet")
     }
+  })
+
+  it('Player two claims its first planet', async () => {
+    // Player 2
+    await program.methods
+      .planetFirstClaim(2, 6)
+      .accounts({
+        signer: secondPlayerWallet.keypair.publicKey,
+      })
+      .signers([secondPlayerWallet.keypair])
+      .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
   })
 
   it('Player is awarded a token amount of resources when claiming the first planet', async () => {

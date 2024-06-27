@@ -83,7 +83,8 @@ describe('[Unit]: 💰 Mints', () => {
   let playerWallet: Keypair
   before('Get player wallet', async () => {
     clearPlayers()
-    playerWallet = await usePlayer(1)
+    // admin
+    playerWallet = (await usePlayer(1, program.programId)).keypair
   })
 
   it('Intergalactic Tender: mint and metadata', async () => {
@@ -95,9 +96,6 @@ describe('[Unit]: 💰 Mints', () => {
       })
       .signers([playerWallet])
       .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
   })
   it('Metal: mint and metadata', async () => {
     await program.methods

@@ -1,7 +1,6 @@
 use crate::{
     fleet::{Fleet, FleetErrorCode},
-    process_burn_fuel,
-    resource::ResourceAuthority,
+    resource::{process_burn_resource, ResourceAuthority},
     seeds,
 };
 use anchor_lang::prelude::*;
@@ -16,9 +15,9 @@ pub fn fleet_move(
 ) -> Result<()> {
     let fleet_to = &mut ctx.accounts.fleet_to;
     let fleet_from = &mut ctx.accounts.fleet_from;
-    fleet_to.clone_from(fleet_from);
+    fleet_to.replace_with_another_fleet(fleet_from);
     fleet_from.reset();
-    process_burn_fuel(
+    process_burn_resource(
         &ctx.accounts.token_program,
         (
             &ctx.accounts.account_fuel,
@@ -28,7 +27,7 @@ pub fn fleet_move(
                 ctx.bumps.resource_authority,
             ),
         ),
-        fleet_to.get_move_quote((x, y), (move_to_x, move_to_y)),
+        ctx.accounts.fleet_to.get_move_quote((x, y), (move_to_x, move_to_y)),
     )
 }
 
@@ -41,9 +40,10 @@ pub struct FleetMove<'info> {
     #[account(
         mut,
         seeds = [
-            x.to_le_bytes().as_ref(),
-            y.to_le_bytes().as_ref()
-        ],
+            seeds::FLEET, 
+            x.to_le_bytes().as_ref(), 
+            y.to_le_bytes().as_ref(), 
+        ], 
         bump,
         constraint = fleet_from.is_present() @ FleetErrorCode::FleetNotPresent,
         constraint = fleet_from.is_owned_by(&signer.key()) @ FleetErrorCode::NoAuthority,
@@ -53,13 +53,14 @@ pub struct FleetMove<'info> {
     #[account(
         init_if_needed,
         seeds = [
-            x.to_le_bytes().as_ref(),
-            y.to_le_bytes().as_ref()
+            seeds::FLEET,
+            move_to_x.to_le_bytes().as_ref(),
+            move_to_y.to_le_bytes().as_ref()
         ],
         bump,
-        space = Fleet::INIT_SPACE,
+        space = 8 + Fleet::INIT_SPACE,
         payer = signer,
-        constraint = fleet_to.is_present() @ FleetErrorCode::IllegalMoveAlreadyOccupied,
+        constraint = !fleet_to.is_present() @ FleetErrorCode::IllegalMoveAlreadyOccupied,
     )]
     pub fleet_to: Account<'info, Fleet>,
     // Resource authority

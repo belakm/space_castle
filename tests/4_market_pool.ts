@@ -125,7 +125,6 @@ describe('[Unit] 💱 Market pool', () => {
             [Buffer.from('mint_' + receiveResource.mintKey)],
             program.programId,
           )
-
           const payerPayTokenAccount =
             payResource.mintKey === 'igt'
               ? getAssociatedTokenAddressSync(payMint, playerWallet.publicKey)

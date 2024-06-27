@@ -150,8 +150,8 @@ pub fn simulate_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -
     while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() || round <= 15 {
         let att_weapons = &attacker_fleet.get_battle_strength().weapons;
         let def_weapons = &defender_fleet.get_battle_strength().weapons;
-        let att_round = attacker_fleet.take_loses(def_weapons);
-        let def_round = defender_fleet.take_loses(att_weapons);
+        let att_round = attacker_fleet.take_losses(def_weapons);
+        let def_round = defender_fleet.take_losses(att_weapons);
         rounds[round] = Some((att_round, def_round));
         round += 1;
     }
