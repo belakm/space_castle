@@ -73,6 +73,7 @@ describe('[Unit]: ⚔️  Battle', () => {
       .signers([secondPlayerWallet.keypair])
       .rpc()
 
+    console.log('--------- BEFORE BATTLE ---------')
     fleet1 = await getFleet(1, 3, program)
     fleet2 = await getFleet(2, 7, program)
     printFleet(fleet1)
@@ -85,7 +86,6 @@ describe('[Unit]: ⚔️  Battle', () => {
       })
       .signers([playerWallet.keypair])
       .rpc()
-      .catch(console.error)
   })
   it('Winner of the battle is granted plunder', async () => {
     const player_cache = await getPlayerCache(
@@ -103,12 +103,14 @@ describe('[Unit]: ⚔️  Battle', () => {
     } else return assert.fail('Player did not receive any plunder')
   })
   it('Winner, loser or both lost some ships in the conflict', async () => {
+    console.log('--------- AFTER BATTLE ----------')
     const fleetBefore1 = { ...fleet1 }
     const fleetBefore2 = { ...fleet2 }
     fleet1 = await getFleet(1, 3, program)
     fleet2 = await getFleet(2, 7, program)
     printFleet(fleet1)
     printFleet(fleet2)
+
     return (
       fleetSufferedLosses(fleetBefore1, fleet1) ||
       fleetSufferedLosses(fleetBefore2, fleet2)

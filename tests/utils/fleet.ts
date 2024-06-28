@@ -109,7 +109,7 @@ export const printFleet = (fleet: Fleet) => {
             : `${modules}${modules === '' ? '' : ' | '}${Object.keys(module.moduleType)[0]} lvl. ${module.level}`,
         '',
       )
-      console.log(`    Squadron ${index}`)
+      console.log(`    Squadron ${index}, active ships: ${squadron.amount}`)
       console.log(`      ${modules}`)
     }
   })

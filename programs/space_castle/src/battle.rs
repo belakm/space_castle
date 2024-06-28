@@ -139,7 +139,7 @@ pub struct FleetBattleRound {
     pub presence: [BattlePresence; SQUADRONS_IN_FLEET],
 }
 
-pub fn simulate_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -> BattleResult {
+pub fn fleet_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -> BattleResult {
     let att_init_cost = attacker_fleet.get_quote();
     let def_init_cost = defender_fleet.get_quote();
     let mut round = 0;
@@ -147,7 +147,7 @@ pub fn simulate_battle(attacker_fleet: &mut Fleet, defender_fleet: &mut Fleet) -
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
         None,
     ];
-    while !attacker_fleet.in_retreat() || !defender_fleet.in_retreat() || round <= 15 {
+    while !attacker_fleet.in_retreat() && !defender_fleet.in_retreat() && round < MAX_ROUNDS {
         let att_weapons = &attacker_fleet.get_battle_strength().weapons;
         let def_weapons = &defender_fleet.get_battle_strength().weapons;
         let att_round = attacker_fleet.take_losses(def_weapons);

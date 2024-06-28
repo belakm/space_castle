@@ -125,14 +125,14 @@ impl Fleet {
             }
         }
         // Calc how much dmg per squadron
-        let dmg = attack.divide(active_squadrons);
+        let dmg = attack.divide(active_squadrons); // <---- DIV BY ZERO?
         for (index, squadron) in self.squadrons.iter_mut().enumerate() {
             if let Some(squadron) = squadron {
                 if squadron.presence.eq(&BattlePresence::Gone) {
                     continue;
                 }
                 let is_retreating = squadron.morale.eq(&Morale::Broken);
-                let (loss, new_morale) = squadron.take_damage(&dmg);
+                let (loss, new_morale) = squadron.take_damage(&dmg); // <---- DIV BY ZERO?
                 morale[index] = new_morale;
                 losses[index] += loss;
                 presence[index] = if is_retreating || squadron.amount == 0 {
@@ -261,7 +261,7 @@ impl Squadron {
             return (0, Morale::Broken);
         };
         let remainder_health = shield.saturating_add(armor).saturating_add(hull);
-        let ratio_of_surviving_ships: f32 = (remainder_health as f32).div(total_health as f32);
+        let ratio_of_surviving_ships: f32 = (remainder_health as f32).div(total_health as f32); // <---- DIV BY ZERO?
         let new_amount = (self.amount as f32).mul(ratio_of_surviving_ships) as u16;
         let losses = self.amount.saturating_sub(new_amount);
         let morale = if ratio_of_surviving_ships >= 0.6 {

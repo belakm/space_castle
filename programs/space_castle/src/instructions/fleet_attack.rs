@@ -1,5 +1,5 @@
 use crate::{
-    battle::{simulate_battle, BattleResult, BattleSide},
+    battle::{fleet_battle, BattleResult, BattleSide},
     fleet::{Fleet, FleetErrorCode},
     resource::{process_burn_resource, PlayerCache, ResourceAuthority},
     seeds,
@@ -17,22 +17,26 @@ pub fn fleet_attack(
     let fleet = &mut ctx.accounts.fleet;
     let fleet_target = &mut ctx.accounts.fleet_target;
 
+    // Here is where the battle happens
     let BattleResult {
         winner,
         rounds,
         att_losses,
         def_losses,
-    } = simulate_battle(fleet, fleet_target);
+    } = fleet_battle(fleet, fleet_target);
 
+    // Calculate resources the winner gets
     let resource_gain = match winner {
         BattleSide::Attacker => att_losses.div(3).sum(def_losses.div(5)),
         BattleSide::Defender => def_losses.div(3).sum(att_losses.div(5)),
     };
+
+    // Determine winner account
     let winner_player_cache = match winner {
         BattleSide::Attacker => &mut ctx.accounts.player_cache,
         BattleSide::Defender => &mut ctx.accounts.player_cache_target,
     };
-
+    // Add resources to account
     winner_player_cache.resources = winner_player_cache.resources.sum(resource_gain);
 
     // Burn fuel of the attacker
