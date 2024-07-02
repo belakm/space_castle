@@ -108,7 +108,6 @@ impl Resources {
             &Account<'info, TokenAccount>,
         ),
     ) -> Result<()> {
-        // Give some initial supplies
         process_mint_metal(
             token_program,
             (account_metal, (mint_metal, bump_metal), mint_metal),

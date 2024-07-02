@@ -11,7 +11,7 @@ import {
 import { assert } from 'chai'
 import { createSimpleFleetTemplate, fleetKey } from './utils/fleet'
 
-describe('[Unit]: 🚀 Fleet', () => {
+describe('[Test]: 🚀 Fleet', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   const provider = anchor.AnchorProvider.env()
   let playerWallet: PlayerInfo
@@ -29,7 +29,7 @@ describe('[Unit]: 🚀 Fleet', () => {
     )
   })
 
-  it('Fleet can move', async () => {
+  it('Moving a fleet to new coordinates', async () => {
     const fleetFrom = fleetKey(1, 3)
     const fleetTo = fleetKey(2, 3)
     await program.methods
@@ -47,7 +47,7 @@ describe('[Unit]: 🚀 Fleet', () => {
         return assert.fail(e)
       })
   })
-  it('When fleet moves, it burns fuel', async () => {
+  it('Moving a fleet costs resources', async () => {
     const prevBalances = { ...playerBalances }
     playerBalances = await getPlayerBalances(
       playerWallet.keypair,
@@ -93,7 +93,7 @@ describe('[Unit]: 🚀 Fleet', () => {
     return assert.fail('Somehow fleet moved where another was present')
   })
 
-  it('New fleet can be created', async () => {
+  it('Creating a fleet', async () => {
     await program.methods
       .fleetNew(1, 3, createSimpleFleetTemplate())
       .accounts({
@@ -137,6 +137,7 @@ describe('[Unit]: 🚀 Fleet', () => {
       return assert.ok('Ok')
     }
   })
+
   it('Only owner of the fleet can move it around', async () => {
     try {
       await program.methods

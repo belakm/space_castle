@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    token::{self, Mint, MintTo, Token, TokenAccount}, 
+    token::{Mint, Token, TokenAccount}, 
     associated_token::AssociatedToken,
 };
-use crate::{player::{Player, PlayerErrorCode}, resource::PlayerCache, seeds};
+use crate::{player::{Player, PlayerErrorCode}, process_mint_igt, resource::PlayerCache, seeds};
 
 pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Result<()> {
     if player_name.as_bytes().len() > 32 {
@@ -16,22 +16,15 @@ pub fn player_register(ctx: Context<PlayerRegister>, player_name: String) -> Res
     player_info.settled_planets = 0;
     
     // Credit some IGT to the player
-    let signer_seeds: &[&[&[u8]]] = &[&[seeds::MINT_IGT, &[ctx.bumps.mint]]];
-    token::mint_to(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            MintTo {
-                mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.token_account.to_account_info(),
-                authority: ctx.accounts.mint.to_account_info(),
-            },
-        )
-        .with_signer(signer_seeds),
-        // mint 10 IGT to new players
-        100 * 10u64.pow(ctx.accounts.mint.decimals as u32),
-    )?;
-
-    Ok(())
+    process_mint_igt(
+        &ctx.accounts.token_program, 
+        (
+            &ctx.accounts.account_igt, 
+            (&ctx.accounts.mint_igt, ctx.bumps.mint_igt), 
+            &ctx.accounts.mint_igt
+        ), 
+        10
+    )
 }
 
 #[derive(Accounts)]
@@ -52,14 +45,14 @@ pub struct PlayerRegister<'info> {
         seeds = [seeds::MINT_IGT],
         bump
     )]
-    pub mint: Account<'info, Mint>,
+    pub mint_igt: Account<'info, Mint>,
     #[account(
         init,
         payer = signer,
-        associated_token::mint = mint,
+        associated_token::mint = mint_igt,
         associated_token::authority = signer 
     )]
-    pub token_account: Account<'info, TokenAccount>,
+    pub account_igt: Account<'info, TokenAccount>,
     #[account(
         init,
         payer = signer,

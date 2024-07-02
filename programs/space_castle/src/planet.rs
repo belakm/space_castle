@@ -20,7 +20,11 @@ impl PlanetInfo {
     }
     /// Checks if the planet has a specific owner
     pub fn is_owned_by(&self, owner: &Pubkey) -> bool {
-        self.owner.is_some_and(|o| o.eq(owner))
+        if let Some(o) = self.owner {
+            o.eq(owner)
+        } else {
+            false
+        }
     }
 }
 
@@ -99,6 +103,6 @@ pub enum PlanetErrorCode {
     MaxOneFirstPlanet,
     #[msg("Invalid planet coordinates")]
     NoPlanetAtCoordinates,
-    #[msg("Not owner of this planet)")]
+    #[msg("No authority over this planet)")]
     NoAuthority,
 }

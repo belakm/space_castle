@@ -5,7 +5,7 @@ import { Keypair } from '@solana/web3.js'
 import { assert } from 'chai'
 import { getPlayerBalances, usePlayer } from './utils/player'
 
-describe('[Unit]: 🤠 Player', () => {
+describe('[Test]: 🤠 Player', () => {
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
   const provider = anchor.AnchorProvider.env()
   let playerWallet: Keypair
@@ -17,7 +17,7 @@ describe('[Unit]: 🤠 Player', () => {
     secondPlayerWallet = (await usePlayer(2, program.programId)).keypair
   })
 
-  it('New player can be created', async () => {
+  it('Creating a new player', async () => {
     await program.methods
       .playerRegister('mico')
       .accounts({
@@ -27,7 +27,7 @@ describe('[Unit]: 🤠 Player', () => {
       .rpc()
   })
 
-  it('New player gets a token amount of iGT', async () => {
+  it('New player gets a small amount of IGT tokens', async () => {
     const balances = await getPlayerBalances(
       playerWallet,
       program.programId,
@@ -39,7 +39,7 @@ describe('[Unit]: 🤠 Player', () => {
     }
   })
 
-  it('Activate resource accounts for player', async () => {
+  it('Player resource token accounts initialization - this must be done in separate instructions due to size constraints', async () => {
     await program.methods
       .playerCreateResourceAccountMetal()
       .accounts({
@@ -85,7 +85,7 @@ describe('[Unit]: 🤠 Player', () => {
     }
   })
 
-  it('Another Player', async () => {
+  after(async () => {
     await program.methods
       .playerRegister('mico 2')
       .accounts({
@@ -121,5 +121,7 @@ describe('[Unit]: 🤠 Player', () => {
       })
       .signers([secondPlayerWallet])
       .rpc()
+
+    console.log('\n\tInitialized Player 2 for future tests\n')
   })
 })

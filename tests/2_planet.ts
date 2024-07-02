@@ -10,9 +10,8 @@ import {
   getPlayerCache,
   usePlayer,
 } from './utils/player'
-import { getHoldings, hasBuilding } from './utils/planet'
 
-describe('[Unit]: 🪐 Planet', () => {
+describe('[Test]: 🪐 Planet', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
@@ -30,6 +29,35 @@ describe('[Unit]: 🪐 Planet', () => {
     )
   })
 
+  it('First planet can be claimed for free', async () => {
+    // Player 1
+    await program.methods
+      .planetFirstClaim(1, 3)
+      .accounts({
+        signer: playerWallet.keypair.publicKey,
+      })
+      .signers([playerWallet.keypair])
+      .rpc()
+      .catch((e) => {
+        return assert.fail(e)
+      })
+  })
+
+  it('First free planet be claimed only once', async () => {
+    try {
+      await program.methods
+        .planetFirstClaim(2, 20)
+        .accounts({
+          signer: playerWallet.keypair.publicKey,
+        })
+        .signers([playerWallet.keypair])
+        .rpc()
+      return assert.fail('Could settle second planet as first planet.')
+    } catch {
+      return assert.ok("Couldn't settle second planet as first planet.")
+    }
+  })
+
   it("Can't claim a planet where there is no planet", async () => {
     try {
       await program.methods
@@ -45,21 +73,7 @@ describe('[Unit]: 🪐 Planet', () => {
     }
   })
 
-  it('Player one with no planets can claim the first planet for free', async () => {
-    // Player 1
-    await program.methods
-      .planetFirstClaim(1, 3)
-      .accounts({
-        signer: playerWallet.keypair.publicKey,
-      })
-      .signers([playerWallet.keypair])
-      .rpc()
-      .catch((e) => {
-        return assert.fail(e)
-      })
-  })
-
-  it("Player two can't claim already claimed planet", async () => {
+  it('Only planet without an owner can be claimed as free', async () => {
     try {
       await program.methods
         .planetFirstClaim(1, 3)
@@ -74,7 +88,7 @@ describe('[Unit]: 🪐 Planet', () => {
     }
   })
 
-  it('Player two claims its first planet', async () => {
+  it('Claims a planet with another user (required for tests that follow)', async () => {
     // Player 2
     await program.methods
       .planetFirstClaim(2, 6)
@@ -88,7 +102,7 @@ describe('[Unit]: 🪐 Planet', () => {
       })
   })
 
-  it('Player is awarded a token amount of resources when claiming the first planet', async () => {
+  it('Claiming a planet adds a token amount of IGT and resources to Player Cache', async () => {
     const player_cache = await getPlayerCache(
       playerWallet.keypair.publicKey,
       program,
@@ -104,7 +118,7 @@ describe('[Unit]: 🪐 Planet', () => {
     } else return assert.fail('Player did not receive all resources')
   })
 
-  it('Player can claim Player Cache (it has resources granted by claiming first planet)', async () => {
+  it('Player Cache can be claimed - IGT is deposited into wallet and resources into token accounts', async () => {
     try {
       await program.methods
         .playerClaimResourceCache()
@@ -146,45 +160,44 @@ describe('[Unit]: 🪐 Planet', () => {
     }
   })
 
-  // TODO: Add this test
-  it("TODO: Can't harvest planet if enough time hasnt passed", async () => {})
+  it('Planet harvesting, this grants player IGT and resources', async () => {
+    await program.methods
+      .planetHarvest(1, 3)
+      .accounts({ signer: playerWallet.keypair.publicKey })
+      .signers([playerWallet.keypair])
+      .rpc()
+      .catch(console.log)
 
-  // TODO: Add this test
-  it('TODO: After enough slots passed, you can harvest again', async () => {})
-
-  it('Planet has starting buildings', async () => {
-    const holdings = await getHoldings(
-      1,
-      3,
-      playerWallet.keypair.publicKey,
-      program,
+    const oldBalances = { ...playerBalances }
+    playerBalances = await getPlayerBalances(
+      playerWallet.keypair,
+      program.programId,
+      provider,
     )
-    const hasAllTheRightBuildings =
-      hasBuilding(holdings, 'planetaryCapital') &&
-      hasBuilding(holdings, 'shipyard') &&
-      (hasBuilding(holdings, 'crystalLabs') ||
-        hasBuilding(holdings, 'metalIndustry') ||
-        hasBuilding(holdings, 'chemicalRefinery'))
-    if (!hasAllTheRightBuildings) {
-      return assert.fail(`Missing the three starter buildings`)
+    const diff = balanceDiff(playerBalances, oldBalances)
+    if (
+      diff.igt > 0 &&
+      diff.metal > 0 &&
+      diff.crystal > 0 &&
+      diff.chemical > 0 &&
+      diff.fuel > 0
+    ) {
+      return assert.ok('Got resources')
+    } else {
+      return assert.fail('Not all resources were given')
     }
   })
 
-  it("Can't claim another planet as first planet", async () => {
+  it('Planet can only be harvested by its owner', async () => {
     try {
       await program.methods
-        .planetFirstClaim(2, 20)
-        .accounts({
-          signer: playerWallet.keypair.publicKey,
-        })
-        .signers([playerWallet.keypair])
+        .planetHarvest(1, 3)
+        .accounts({ signer: secondPlayerWallet.keypair.publicKey })
+        .signers([secondPlayerWallet.keypair])
         .rpc()
-      return assert.fail('Could settle second planet as first planet.')
-    } catch {
-      return assert.ok("Couldn't settle second planet as first planet.")
+      return assert.fail('Failure')
+    } catch (e) {
+      return assert.ok('Ok')
     }
   })
-
-  // TODO: Add this test
-  it("TODO: Player can't harvest another player's planet", async () => {})
 })

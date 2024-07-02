@@ -12,7 +12,7 @@ import {
 import { getBuilding, getHoldings, hasBuilding } from './utils/planet'
 import { mintAllResourcesToAddress } from './utils/token'
 
-describe('[Unit]: 🏰 Buildings', () => {
+describe('[Test]: 🏰 Buildings', () => {
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
   const program = anchor.workspace.SpaceCastle as Program<SpaceCastle>
@@ -30,7 +30,20 @@ describe('[Unit]: 🏰 Buildings', () => {
     await mintAllResourcesToAddress(playerWallet)
   })
 
-  it('Player can build a new building on the planet', async () => {
+  it('Planet starts with basic buildings - Planetary Capital, Shipyard and either: Crystal Labs, Metal Industry, Chemical Refinery', async () => {
+    const holdings = await getHoldings(1, 3, playerWallet.publicKey, program)
+    const hasAllTheRightBuildings =
+      hasBuilding(holdings, 'planetaryCapital') &&
+      hasBuilding(holdings, 'shipyard') &&
+      (hasBuilding(holdings, 'crystalLabs') ||
+        hasBuilding(holdings, 'metalIndustry') ||
+        hasBuilding(holdings, 'chemicalRefinery'))
+    if (!hasAllTheRightBuildings) {
+      return assert.fail(`Missing the three starter buildings`)
+    }
+  })
+
+  it('New buildings can be built on the planet', async () => {
     await program.methods
       .planetBuildingNew(1, 3, { astralNavyHq: {} })
       .accounts({
@@ -49,7 +62,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('Player paid resources for the new building', async () => {
+  it('New buildings are paid with resources', async () => {
     const lastBalance = { ...latestBalance }
     latestBalance = await getPlayerBalances(
       playerWallet,
@@ -62,7 +75,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('Player can upgrade a building on the planet', async () => {
+  it('Buildings can be upgraded, this increases their level', async () => {
     await program.methods
       .planetBuildingUpgrade(1, 3, { astralNavyHq: {} })
       .accounts({
@@ -81,7 +94,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('Player paid resources for the upgrade', async () => {
+  it('Upgrading a building costs resources', async () => {
     const lastBalance = { ...latestBalance }
     latestBalance = await getPlayerBalances(
       playerWallet,
@@ -94,7 +107,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('Player can change a building into another building', async () => {
+  it('Buildings can be changed into another building type', async () => {
     latestHolding = await getHoldings(1, 3, playerWallet.publicKey, program)
     await program.methods
       .planetBuildingChange(1, 3, { astralNavyHq: {} }, { fuelExtractors: {} })
@@ -120,7 +133,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('New changed building has half its levels when upgraded', async () => {
+  it('Changing a building halves its level', async () => {
     const buildings = await getHoldings(1, 3, playerWallet.publicKey, program)
     const oldBuilding = getBuilding(latestHolding, 'astralNavyHq')
     const newBuilding = getBuilding(buildings, 'fuelExtractors')
@@ -131,7 +144,7 @@ describe('[Unit]: 🏰 Buildings', () => {
     }
   })
 
-  it('Player paid resources for the change', async () => {
+  it('Changing a building costs resources', async () => {
     const lastBalance = { ...latestBalance }
     latestBalance = await getPlayerBalances(
       playerWallet,

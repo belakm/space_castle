@@ -1,29 +1,25 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-
-use crate::{resource::{PlayerCache, ResourceAuthority, Resources}, seeds};
+use crate::{resource::{PlayerCache, ResourceAuthority}, seeds};
 
 pub fn player_claim_resource_cache(ctx: Context<PlayerClaimResourceCache>) -> Result<()> {
     let player_cache = &mut ctx.accounts.player_cache.resources;
     player_cache.mint(
-        &ctx.accounts.token_program,
-        (
-            (&ctx.accounts.mint_igt, ctx.bumps.mint_igt),
-            (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
-            (&ctx.accounts.mint_crystal, ctx.bumps.mint_crystal),
-            (&ctx.accounts.mint_chemical, ctx.bumps.mint_chemical),
-            (&ctx.accounts.mint_fuel, ctx.bumps.mint_fuel),
-        ),
-        (
-            &ctx.accounts.igt_token_account,
-            &ctx.accounts.metal_token_account,
-            &ctx.accounts.crystal_token_account,
-            &ctx.accounts.chemical_token_account,
-            &ctx.accounts.fuel_token_account,
-        ),
-    )?;
-    player_cache.reset();
+        &ctx.accounts.token_program, (
+        (&ctx.accounts.mint_igt, ctx.bumps.mint_igt),
+        (&ctx.accounts.mint_metal, ctx.bumps.mint_metal),
+        (&ctx.accounts.mint_crystal, ctx.bumps.mint_crystal),
+        (&ctx.accounts.mint_chemical, ctx.bumps.mint_chemical),
+        (&ctx.accounts.mint_fuel, ctx.bumps.mint_fuel),
 
+    ), (
+        &ctx.accounts.account_igt,
+        &ctx.accounts.account_metal,
+        &ctx.accounts.account_crystal,
+        &ctx.accounts.account_chemical,
+        &ctx.accounts.account_fuel,
+    ))?;
+    player_cache.reset();
     Ok(())
 }
 
@@ -43,7 +39,6 @@ pub struct PlayerClaimResourceCache<'info> {
         bump
     )]
     pub resource_authority: Account<'info, ResourceAuthority>,
-   
     // Metal
     #[account(
         mut,
@@ -58,7 +53,7 @@ pub struct PlayerClaimResourceCache<'info> {
         token::mint = mint_metal, 
         token::authority = resource_authority 
     )]
-    pub metal_token_account:Account<'info, TokenAccount>,
+    pub account_metal:Account<'info, TokenAccount>,
     
     // Crystal
     #[account(
@@ -74,7 +69,7 @@ pub struct PlayerClaimResourceCache<'info> {
         token::mint = mint_crystal, 
         token::authority = resource_authority 
     )]
-    pub crystal_token_account: Account<'info, TokenAccount>,
+    pub account_crystal: Account<'info, TokenAccount>,
     
     // Chemical
     #[account(
@@ -90,7 +85,7 @@ pub struct PlayerClaimResourceCache<'info> {
         token::mint = mint_chemical, 
         token::authority = resource_authority 
     )]
-    pub chemical_token_account:Account<'info, TokenAccount>,
+    pub account_chemical: Account<'info, TokenAccount>,
     
     // Fuel
     #[account(
@@ -106,8 +101,8 @@ pub struct PlayerClaimResourceCache<'info> {
         token::mint = mint_fuel, 
         token::authority = resource_authority 
     )]
-    pub fuel_token_account: Account<'info, TokenAccount>,
-    
+    pub account_fuel: Account<'info, TokenAccount>,
+   
     // IGT
     #[account(
         mut,
@@ -120,8 +115,7 @@ pub struct PlayerClaimResourceCache<'info> {
         associated_token::mint = mint_igt,
         associated_token::authority = signer 
     )]
-    pub igt_token_account: Account<'info, TokenAccount>,
-
+    pub account_igt: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }

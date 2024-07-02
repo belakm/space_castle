@@ -244,5 +244,5 @@ export function logK(k: bigint) {
  * (Constant-Product Algorithm)
  */
 export function logChangeInK(changeInK: string) {
-  console.log(`** Δ Change in Constant-Product (K): ${changeInK}`)
+  console.log(`\n** Δ Change in Constant-Product (K): ${changeInK}\n`)
 }
