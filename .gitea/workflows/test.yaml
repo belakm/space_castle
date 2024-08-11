@@ -1,0 +1,11 @@
+name: Game tests
+run-name: ${{ gitea.actor }} is testing out the game on blockchain 🚀
+on: [push]
+
+jobs:
+  Explore-Gitea-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cargo 
+      - run: ./start_local_validator
+      - run: cargo testcargo::

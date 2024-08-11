@@ -13,7 +13,11 @@ use anchor_lang::prelude::*;
 use building::BuildingType;
 use instructions::*;
 
-declare_id!("9M2kfet4NAaJyz7Uavx4GAjUexqZrZ6ozoA3QGbkRZHK");
+// Local validator
+// declare_id!("9M2kfet4NAaJyz7Uavx4GAjUexqZrZ6ozoA3QGbkRZHK");
+
+// Devnet
+declare_id!("BKbyqruPEXwvSfiQZ9hLZSich3heeU3ZBkrM69KQ276f");
 
 pub mod mint_decimals {
     pub const IGT: u8 = 8;

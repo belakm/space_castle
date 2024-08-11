@@ -4,20 +4,24 @@
 seeds = false
 skip-lint = false
 
-[programs.localnet]
-space_castle = "9M2kfet4NAaJyz7Uavx4GAjUexqZrZ6ozoA3QGbkRZHK"
+# [programs.localnet]
+# space_castle = "9M2kfet4NAaJyz7Uavx4GAjUexqZrZ6ozoA3QGbkRZHK"
+
+[programs.devnet]
+space_castle = "BKbyqruPEXwvSfiQZ9hLZSich3heeU3ZBkrM69KQ276f"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "/home/mico/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
-[test.validator]
-url = "http://127.0.0.1:8899"
-ledger = "./.anchor/test-ledger/"
-rpc_port = 8899
+# Local testing
+# [test.validator]
+# url = "http://127.0.0.1:8899"
+# ledger = "./.anchor/test-ledger/"
+# rpc_port = 8899

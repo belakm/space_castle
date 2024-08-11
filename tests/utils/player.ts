@@ -9,8 +9,11 @@ import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs'
 import { ResourceKey } from './resources'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import { SpaceCastle } from '../../target/types/space_castle'
+import { isDevnet } from './provider'
 
 const path = 'tests/.wallets'
+// devnet wallet 1: 8MMmgktCfTpYdHkGvBJ4qTvvDUa74rwyJuFFtAmDkj2J
+// devnet wallet 2: Gv92PjFunxFe2tZQ9yLUnaBBq9Rjt4PURrxEVXWMU4HS
 
 export async function createAndFundWallet(): Promise<Keypair> {
   const provider = anchor.AnchorProvider.env()
@@ -29,8 +32,8 @@ export async function createAndFundWallet(): Promise<Keypair> {
 
 export function clearPlayers() {
   for (const index of [1, 2]) {
-    if (existsSync(path_to_file(index))) {
-      unlinkSync(path_to_file(index))
+    if (existsSync(get_wallet_path(index))) {
+      unlinkSync(get_wallet_path(index))
     }
   }
 }
@@ -49,9 +52,8 @@ export async function usePlayer(
   programId: PublicKey,
 ): Promise<PlayerInfo> {
   let keypair: Keypair
-
   // Check if player wallet is already stored
-  if (!existsSync(path_to_file(index))) {
+  if (!existsSync(get_wallet_path(index)) && !isDevnet()) {
     // if its not, create a new wallet and store info to file
     keypair = await createAndFundWallet()
     writeFileSync(
@@ -91,12 +93,14 @@ export async function usePlayer(
   }
 }
 
-function path_to_file(index: number) {
-  return `${path}/wallet-${index}.json`
+function get_wallet_path(index: number, devnet?: boolean) {
+  return `${path}/${devnet ? 'devnet-' : ''}wallet-${index}.json`
 }
 
 function parseWallet(index: number): Keypair {
-  const secretKeyArray = JSON.parse(readFileSync(path_to_file(index), 'utf-8'))
+  const secretKeyArray = JSON.parse(
+    readFileSync(get_wallet_path(index, isDevnet()), 'utf-8'),
+  )
   const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyArray))
   return keypair
 }

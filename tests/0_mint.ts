@@ -4,6 +4,8 @@ import { SpaceCastle } from '../target/types/space_castle'
 import { clearPlayers, usePlayer } from './utils/player'
 import { assert } from 'chai'
 
+anchor.setProvider(anchor.AnchorProvider.env())
+
 describe('[Test]: 💰 Mints', () => {
   const provider = anchor.AnchorProvider.env()
   const program = anchor.workspace.SpaceCastle as anchor.Program<SpaceCastle>
