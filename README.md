@@ -19,7 +19,7 @@ It comes with tests for all endpoints.
 ## Client
 
 Go ahead, build one :P\
-Check the example in (https://github.com/belakm/space-client)[space-client] project.
+Check the example in [space-client](https://github.com/belakm/space-client) project.
 
 ## Passing tests:
 
