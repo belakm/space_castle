@@ -7,9 +7,9 @@ This project was started to learn Solana Dev and to explore the possibilities of
 
 It features minimum viable features of a Travian-like game: users, bases, buildings, units, fighting, resources and global trade.
 
-Read the (https://docs.google.com/document/d/1csSxpym-yWUFjzpSv7CLkAp7P2HOJqIG0l1UoCzg5L8/edit?usp=sharing)[Design document on Google Docs].
+Read the [Design document on Google Docs](https://docs.google.com/document/d/1csSxpym-yWUFjzpSv7CLkAp7P2HOJqIG0l1UoCzg5L8/edit?usp=sharing).
 
-Check the (https://www.figma.com/design/8jx4zlPcKxEZH54dXd3yIw/Space-game)[Figma wireframes]
+Check the [Figma wireframes](https://www.figma.com/design/8jx4zlPcKxEZH54dXd3yIw/Space-game).
 
 ## Technically
 
